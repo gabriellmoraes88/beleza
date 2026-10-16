@@ -38,8 +38,7 @@ export function BookingFlow({ studio, today }: { studio: PublicStudio; today: st
   const [date, setDate] = useState(today);
   // null = qualquer profissional
   const [prof, setProf] = useState<string | null>(null);
-  const team = studio.professionals ?? [];
-  const profName = team.find((p) => p.id === prof)?.name ?? "Qualquer profissional";
+  const allTeam = studio.professionals ?? [];
   const [month, setMonth] = useState(monthStart(today));
   const [slots, setSlots] = useState<string[] | null>(null);
   const [slot, setSlot] = useState<string | null>(null);
@@ -52,6 +51,9 @@ export function BookingFlow({ studio, today }: { studio: PublicStudio; today: st
 
   const grid = useMemo(() => monthGrid(month), [month]);
   const ids = picked.map((s) => s.id);
+  // Só quem faz todos os serviços escolhidos (sem lista = faz todos).
+  const team = allTeam.filter((p) => !p.service_ids || ids.every((id) => p.service_ids!.includes(id)));
+  const profName = team.find((p) => p.id === prof)?.name ?? "Qualquer profissional";
   const totalMinutes = picked.reduce((sum, s) => sum + s.duration_minutes, 0);
   const totalCents = picked.reduce((sum, s) => sum + s.price_cents, 0);
 
@@ -92,7 +94,10 @@ export function BookingFlow({ studio, today }: { studio: PublicStudio; today: st
     if (picked.length === 0) return;
     setStep("schedule");
     setError(null);
-    loadSlots(ids, date);
+    // A profissional escolhida antes pode não fazer os serviços de agora.
+    const keep = prof && team.some((p) => p.id === prof) ? prof : null;
+    setProf(keep);
+    loadSlots(ids, date, keep);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -258,6 +263,16 @@ export function BookingFlow({ studio, today }: { studio: PublicStudio; today: st
         <button type="button" onClick={() => setStep("services")} className="btn-secondary mb-5 rounded-full">
           ‹ Voltar
         </button>
+        {allTeam.length > 1 && team.length === 0 && (
+          <p role="alert" className="mb-6 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            Nenhuma profissional faz todos esses serviços juntos. Volte e agende um serviço de cada vez.
+          </p>
+        )}
+        {allTeam.length > 1 && team.length === 1 && (
+          <p className="mb-6 text-sm text-stone-600">
+            Atendimento com <span className="font-medium text-stone-900">{team[0].name}</span>.
+          </p>
+        )}
         {team.length > 1 && (
           <div className="mb-6">
             <h2 className="mb-3 text-lg font-semibold text-stone-900">Com quem?</h2>
