@@ -76,7 +76,7 @@ export async function startSubscription(_: ActionState, formData: FormData): Pro
   }
 
   revalidatePath("/painel", "layout");
-  return { message: "Assinatura criada! Use o botão Pagar para escolher Pix, boleto ou cartão." };
+  return { message: "Assinatura criada! Escolha Pix ou cartão logo acima para pagar." };
 }
 
 export async function cancelSubscription(): Promise<void> {

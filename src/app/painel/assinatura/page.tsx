@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { requireStudio } from "@/lib/studio";
 import { formatMoney } from "@/lib/format";
-import { formatDateLong, formatLocalDate } from "@/lib/time";
+import { formatDateLong, formatLocalDate, todayIn } from "@/lib/time";
 import { ActionForm, ConfirmButton, SubmitButton } from "@/components/form";
 import { Alert, Field, PageHeader } from "@/components/ui";
 import { cancelSubscription, startSubscription } from "./actions";
+import { payWithCard } from "./pay-actions";
+import { PaymentBox } from "./payment-box";
 
 export const metadata: Metadata = { title: "Assinatura" };
 
@@ -27,6 +29,10 @@ const PAYMENT_LABEL: Record<string, string> = {
   AWAITING_RISK_ANALYSIS: "Em análise",
 };
 
+function paidRecently(paidAt: string | null) {
+  return !!paidAt && Date.now() - new Date(paidAt).getTime() < 15 * 60_000;
+}
+
 export default async function BillingPage() {
   const { supabase, studio, subscription, hasAccess, role } = await requireStudio();
   const tz = studio.timezone;
@@ -34,14 +40,22 @@ export default async function BillingPage() {
     supabase.from("plans").select("name, price_cents").eq("code", subscription?.plan_code ?? "studio").maybeSingle(),
     supabase
       .from("payments")
-      .select("id, status, value_cents, due_date, paid_at, invoice_url")
+      .select("id, status, billing_type, value_cents, due_date, paid_at, invoice_url")
       .eq("studio_id", studio.id)
       .order("due_date", { ascending: false })
       .limit(24),
   ]);
 
   const hasAsaasSub = !!subscription?.asaas_subscription_id && subscription.status !== "canceled";
-  const openPayment = (payments ?? []).find((p) => p.status === "PENDING" || p.status === "OVERDUE");
+  // A mais antiga em aberto primeiro (a lista vem da mais nova para a mais antiga).
+  const openPayment = [...(payments ?? [])].reverse().find((p) => p.status === "PENDING" || p.status === "OVERDUE");
+  // Mensalidade no cartão que ainda não venceu: o Asaas cobra sozinho no vencimento.
+  const autoCharge =
+    openPayment?.billing_type === "CREDIT_CARD" &&
+    openPayment.status === "PENDING" &&
+    !!openPayment.due_date &&
+    openPayment.due_date > todayIn(tz);
+  const justPaid = (payments ?? []).some((p) => paidRecently(p.paid_at));
 
   return (
     <div className="max-w-2xl">
@@ -74,10 +88,29 @@ export default async function BillingPage() {
           )}
           {!hasAccess && <p className="text-rose-700">Acesso limitado. Seus dados estão preservados.</p>}
         </div>
-        {openPayment?.invoice_url && (
-          <a href={openPayment.invoice_url} target="_blank" rel="noreferrer" className="btn-primary mt-4">
-            Pagar {formatMoney(openPayment.value_cents)}
-          </a>
+        {justPaid && !openPayment && (
+          <div className="mt-4">
+            <Alert tone="success">Pagamento recebido! Obrigado.</Alert>
+          </div>
+        )}
+        {openPayment && autoCharge && openPayment.due_date && (
+          <p className="mt-4 text-sm text-stone-600">
+            A próxima mensalidade de {formatMoney(openPayment.value_cents)} será cobrada no seu cartão em{" "}
+            {formatLocalDate(openPayment.due_date, { day: "2-digit", month: "2-digit", year: "numeric" })}.
+          </p>
+        )}
+        {openPayment && !autoCharge && role === "owner" && (
+          <PaymentBox
+            key={openPayment.id}
+            paymentId={openPayment.id}
+            amount={formatMoney(openPayment.value_cents)}
+            payWithCard={payWithCard.bind(null, openPayment.id)}
+          />
+        )}
+        {openPayment && !autoCharge && role !== "owner" && (
+          <p className="mt-4 text-sm text-stone-600">
+            Há uma mensalidade de {formatMoney(openPayment.value_cents)} em aberto. Peça à proprietária do studio para pagar.
+          </p>
         )}
       </div>
 
@@ -85,7 +118,7 @@ export default async function BillingPage() {
         <div className="card mb-5">
           <h2 className="font-semibold">Assinar</h2>
           <p className="mb-3 mt-1 text-sm text-stone-600">
-            Pagamento mensal por Pix, boleto ou cartão, processado pelo Asaas.
+            Pagamento mensal por Pix ou cartão de crédito, aqui mesmo no Bellink.
             {subscription?.status === "trialing" && " A primeira cobrança vence no fim do seu teste."}
           </p>
           <ActionForm action={startSubscription} className="space-y-3">

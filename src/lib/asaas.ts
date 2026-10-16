@@ -37,6 +37,26 @@ export interface AsaasPayment {
   deleted?: boolean;
 }
 
+/** Dados do cartão: só trafegam do formulário para o Asaas. Nunca salvar nem registrar em log. */
+export interface AsaasCard {
+  creditCard: { holderName: string; number: string; expiryMonth: string; expiryYear: string; ccv: string };
+  creditCardHolderInfo: {
+    name: string;
+    email: string;
+    cpfCnpj: string;
+    postalCode: string;
+    addressNumber: string;
+    phone: string;
+    mobilePhone?: string;
+  };
+}
+
+export interface AsaasPixQrCode {
+  encodedImage: string;
+  payload: string;
+  expirationDate?: string;
+}
+
 export interface AsaasSubscription {
   object: "subscription";
   id: string;
@@ -123,6 +143,21 @@ export const asaas = {
 
   /** Saldo da conta; usado pelo admin para testar se a chave funciona. */
   getBalance: () => request<{ balance: number }>("GET", "/finance/balance"),
+
+  getPayment: (id: string) => request<AsaasPayment>("GET", `/payments/${id}`),
+
+  getPixQrCode: (id: string) => request<AsaasPixQrCode>("GET", `/payments/${id}/pixQrCode`),
+
+  payWithCreditCard: (id: string, card: AsaasCard) =>
+    request<AsaasPayment>("POST", `/payments/${id}/payWithCreditCard`, card),
+
+  /** Muda a forma de pagamento das próximas mensalidades. */
+  updateSubscription: (id: string, input: { billingType: "CREDIT_CARD" | "UNDEFINED" | "PIX"; updatePendingPayments?: boolean }) =>
+    request<AsaasSubscription>("PUT", `/subscriptions/${id}`, input),
+
+  /** Cadastra o cartão para as próximas mensalidades, sem cobrar agora. */
+  updateSubscriptionCard: (id: string, input: AsaasCard & { remoteIp: string }) =>
+    request<AsaasSubscription>("POST", `/subscriptions/${id}/updateCreditCard`, input),
 
   listSubscriptionPayments: (id: string) =>
     request<{ data: AsaasPayment[] }>("GET", `/subscriptions/${id}/payments?limit=20`),

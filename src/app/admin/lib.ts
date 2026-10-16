@@ -114,6 +114,7 @@ export const AUDIT_LABEL: Record<string, string> = {
   "billing.reconcile": "Conciliação manual",
   "asaas.test": "Teste de conexão Asaas",
   "report.export": "Relatório baixado",
+  "billing.card_declined": "Cartão recusado",
 };
 
 /** Uma linha de assinatura vem como objeto (studio_id é único), mas o tipo do supabase-js diz array. */
