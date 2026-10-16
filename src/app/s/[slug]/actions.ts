@@ -8,13 +8,28 @@ import { isValidDateStr } from "@/lib/time";
 
 const serviceIdsSchema = z.array(z.string().uuid()).min(1).max(5);
 
-export async function fetchSlots(slug: string, serviceIds: string[], date: string): Promise<string[]> {
-  if (!isValidDateStr(date) || !serviceIdsSchema.safeParse(serviceIds).success) return [];
+const professionalSchema = z.string().uuid().nullable();
+
+/** professionalId nulo = qualquer profissional. */
+export async function fetchSlots(
+  slug: string,
+  serviceIds: string[],
+  date: string,
+  professionalId: string | null = null,
+): Promise<string[]> {
+  if (
+    !isValidDateStr(date) ||
+    !serviceIdsSchema.safeParse(serviceIds).success ||
+    !professionalSchema.safeParse(professionalId).success
+  ) {
+    return [];
+  }
   const supabase = createPublicClient();
   const { data, error } = await supabase.rpc("get_available_slots_multi", {
     p_slug: slug,
     p_service_ids: serviceIds,
     p_date: date,
+    p_professional_id: professionalId,
   });
   if (error || !data) return [];
   return (data as string[]).map((s) => new Date(s).toISOString());
@@ -23,6 +38,7 @@ export async function fetchSlots(slug: string, serviceIds: string[], date: strin
 const bookingSchema = z.object({
   slug: z.string().min(3).max(40),
   serviceIds: serviceIdsSchema,
+  professionalId: professionalSchema.optional(),
   startsAt: z.string().datetime({ offset: true }),
   name: z.string().trim().min(2, "Informe seu nome.").max(80),
   phone: z.string().trim().min(8, "Informe seu telefone com DDD."),
@@ -47,6 +63,7 @@ export async function bookAppointment(input: z.input<typeof bookingSchema>): Pro
       p_customer_name: parsed.data.name,
       p_customer_phone: phone,
       p_customer_note: parsed.data.note || null,
+      p_professional_id: parsed.data.professionalId ?? null,
     })
     .single<{ token: string; status: string }>();
 

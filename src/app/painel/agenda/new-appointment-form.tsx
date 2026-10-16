@@ -6,9 +6,13 @@ import { createManualAppointment } from "./actions";
 export function NewAppointmentForm({
   services,
   defaultDate,
+  team,
+  defaultProfessional,
 }: {
   services: { id: string; name: string; duration_minutes: number }[];
   defaultDate: string;
+  team: { id: string; name: string }[];
+  defaultProfessional?: string;
 }) {
   if (services.length === 0) {
     return <p className="text-sm text-stone-600">Cadastre um serviço antes de criar agendamentos.</p>;
@@ -24,6 +28,17 @@ export function NewAppointmentForm({
           ))}
         </select>
       </Field>
+      {team.length > 0 && (
+        <Field label="Profissional">
+          <select className="input" name="professional_id" defaultValue={defaultProfessional ?? team[0].id}>
+            {team.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </Field>
+      )}
       <div className="grid grid-cols-2 gap-3">
         <Field label="Data">
           <input className="input" type="date" name="date" defaultValue={defaultDate} required />

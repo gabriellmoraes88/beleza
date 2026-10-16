@@ -12,6 +12,7 @@ const MESSAGES: Record<string, string> = {
   ALREADY_HAS_STUDIO: "Sua conta já tem um studio cadastrado.",
   HOURS_OVERLAP: "Há intervalos sobrepostos no mesmo dia. Revise os horários.",
   FORBIDDEN: "Você não tem permissão para isso.",
+  TOO_MANY_PROFESSIONALS: "Limite de 30 profissionais por studio atingido.",
   NOT_AUTHENTICATED: "Faça login novamente.",
 };
 

@@ -36,6 +36,10 @@ export function BookingFlow({ studio, today }: { studio: PublicStudio; today: st
   const [picked, setPicked] = useState<Service[]>([]);
   const [step, setStep] = useState<"services" | "schedule">("services");
   const [date, setDate] = useState(today);
+  // null = qualquer profissional
+  const [prof, setProf] = useState<string | null>(null);
+  const team = studio.professionals ?? [];
+  const profName = team.find((p) => p.id === prof)?.name ?? "Qualquer profissional";
   const [month, setMonth] = useState(monthStart(today));
   const [slots, setSlots] = useState<string[] | null>(null);
   const [slot, setSlot] = useState<string | null>(null);
@@ -70,12 +74,18 @@ export function BookingFlow({ studio, today }: { studio: PublicStudio; today: st
     return Object.entries(groups).filter(([, list]) => list.length > 0);
   }, [slots, tz]);
 
-  function loadSlots(serviceIds: string[], d: string) {
+  function loadSlots(serviceIds: string[], d: string, p: string | null = prof) {
     setSlots(null);
     setSlot(null);
     startLoadingSlots(async () => {
-      setSlots(await fetchSlots(studio.slug, serviceIds, d));
+      setSlots(await fetchSlots(studio.slug, serviceIds, d, p));
     });
+  }
+
+  function chooseProfessional(p: string | null) {
+    setProf(p);
+    setError(null);
+    if (ids.length > 0) loadSlots(ids, date, p);
   }
 
   function goToSchedule() {
@@ -101,6 +111,7 @@ export function BookingFlow({ studio, today }: { studio: PublicStudio; today: st
       const result = await bookAppointment({
         slug: studio.slug,
         serviceIds: ids,
+        professionalId: prof,
         startsAt: slot,
         name: String(formData.get("name") ?? ""),
         phone: String(formData.get("phone") ?? ""),
@@ -247,6 +258,33 @@ export function BookingFlow({ studio, today }: { studio: PublicStudio; today: st
         <button type="button" onClick={() => setStep("services")} className="btn-secondary mb-5 rounded-full">
           ‹ Voltar
         </button>
+        {team.length > 1 && (
+          <div className="mb-6">
+            <h2 className="mb-3 text-lg font-semibold text-stone-900">Com quem?</h2>
+            <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Profissional">
+              {[{ id: null as string | null, name: "Qualquer profissional" }, ...team].map((p) => {
+                const selected = prof === p.id;
+                return (
+                  <button
+                    key={p.id ?? "qualquer"}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    onClick={() => chooseProfessional(p.id)}
+                    className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
+                      selected
+                        ? "border-transparent text-white"
+                        : "border-stone-300 bg-white text-stone-800 hover:border-stone-900"
+                    }`}
+                    style={selected ? { backgroundColor: accent } : undefined}
+                  >
+                    {p.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
         <h2 className="mb-4 text-lg font-semibold text-stone-900">Data e horário do agendamento</h2>
 
         <div className="grid gap-6 md:grid-cols-[280px_1fr]">
@@ -376,6 +414,12 @@ export function BookingFlow({ studio, today }: { studio: PublicStudio; today: st
             <dd className="text-stone-800">{slot ? formatTime(slot, tz) : "-"}</dd>
             <dd className="text-stone-800">{formatDuration(totalMinutes)}</dd>
           </dl>
+          {team.length > 1 && (
+            <p className="mt-3 text-sm text-stone-800">
+              <span className="text-xs font-medium uppercase text-stone-500">Profissional</span>
+              <span className="block">{profName}</span>
+            </p>
+          )}
         </div>
 
         <ul className="divide-y divide-stone-200 rounded-2xl border border-stone-200">

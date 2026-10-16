@@ -16,6 +16,7 @@ type PublicAppointment = {
   ends_at: string;
   service_name: string;
   price_cents: number;
+  professional_name?: string | null;
   customer_first_name: string;
   studio_name: string;
   studio_slug: string;
@@ -85,6 +86,12 @@ export default async function AppointmentPage({ params, searchParams }: PageProp
             <dt className="text-stone-500">Serviço</dt>
             <dd className="font-medium">{appt.service_name}</dd>
           </div>
+          {appt.professional_name && (
+            <div className="flex justify-between gap-3">
+              <dt className="text-stone-500">Com</dt>
+              <dd className="font-medium">{appt.professional_name}</dd>
+            </div>
+          )}
           <div className="flex justify-between gap-3">
             <dt className="text-stone-500">Quando</dt>
             <dd className="text-right font-medium capitalize">{when}</dd>

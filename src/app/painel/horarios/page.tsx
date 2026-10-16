@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { requireStudio } from "@/lib/studio";
+import Link from "next/link";
+import { getTeam, requireStudio } from "@/lib/studio";
 import { WEEKDAYS, formatDateLong, formatTime, todayIn } from "@/lib/time";
 import { ActionForm, ConfirmButton, SubmitButton } from "@/components/form";
 import { EmptyState, PageHeader } from "@/components/ui";
@@ -10,8 +11,12 @@ export const metadata: Metadata = { title: "Horários" };
 
 type Hour = { weekday: number; start_time: string; end_time: string };
 
-export default async function HoursPage() {
-  const { supabase, studio, professional } = await requireStudio();
+export default async function HoursPage({ searchParams }: PageProps<"/painel/horarios">) {
+  const { supabase, studio } = await requireStudio();
+  const sp = await searchParams;
+  const team = (await getTeam()).filter((p) => p.active);
+  const professional = team.find((p) => p.id === sp.p) ?? team[0] ?? null;
+  const multi = team.length > 1;
   const [{ data: hoursData }, { data: blocks }] = await Promise.all([
     supabase
       .from("working_hours")
@@ -20,7 +25,7 @@ export default async function HoursPage() {
       .order("start_time"),
     supabase
       .from("time_blocks")
-      .select("id, starts_at, ends_at, reason")
+      .select("id, starts_at, ends_at, reason, professionals(name)")
       .eq("studio_id", studio.id)
       .gte("ends_at", new Date().toISOString())
       .order("starts_at")
@@ -36,10 +41,35 @@ export default async function HoursPage() {
     <>
       <PageHeader
         title="Horários de atendimento"
-        description="Defina seus dias e horários. Use o segundo intervalo para a pausa do almoço."
+        description="Defina os dias e horários. Use o segundo intervalo para a pausa do almoço."
+        actions={
+          <Link href="/painel/equipe" className="btn-secondary">
+            {multi ? "Gerenciar equipe" : "Adicionar profissional"}
+          </Link>
+        }
       />
+      {multi && professional && (
+        <nav aria-label="Profissional" className="mb-4 flex gap-2 overflow-x-auto pb-1">
+          {team.map((p) => (
+            <Link
+              key={p.id}
+              href={`/painel/horarios?p=${p.id}`}
+              aria-current={p.id === professional.id ? "page" : undefined}
+              className={`shrink-0 rounded-full border px-4 py-2 text-sm font-medium ${
+                p.id === professional.id
+                  ? "border-stone-900 bg-stone-900 text-white"
+                  : "border-stone-300 bg-white text-stone-700 hover:border-stone-400"
+              }`}
+            >
+              {p.name}
+            </Link>
+          ))}
+        </nav>
+      )}
       <div className="grid gap-5 lg:grid-cols-[1fr_360px]">
-        <ActionForm action={saveWorkingHours} className="card space-y-3">
+        <ActionForm key={professional?.id} action={saveWorkingHours} className="card space-y-3">
+          {professional && <input type="hidden" name="professional_id" value={professional.id} />}
+          {multi && professional && <p className="font-semibold">Horário de {professional.name}</p>}
           {order.map((d) => {
             const day = hours.filter((h) => h.weekday === d);
             const open = day.length > 0;
@@ -67,14 +97,14 @@ export default async function HoursPage() {
           <p className="text-xs text-stone-500">
             Dias desmarcados ficam fechados. Deixe o segundo intervalo vazio se não houver pausa.
           </p>
-          <SubmitButton>Salvar horários</SubmitButton>
+          <SubmitButton>{multi && professional ? `Salvar horário de ${professional.name}` : "Salvar horários"}</SubmitButton>
         </ActionForm>
 
         <div className="space-y-5">
           <div className="card">
             <h2 className="mb-1 font-semibold">Bloquear horário</h2>
             <p className="mb-3 text-sm text-stone-600">Compromissos, folgas, férias e feriados.</p>
-            <BlockForm defaultDate={todayIn(tz)} />
+            <BlockForm defaultDate={todayIn(tz)} team={multi ? team : []} defaultProfessional={professional?.id} />
           </div>
           <div>
             <h2 className="mb-2 font-semibold">Próximos bloqueios</h2>
@@ -92,6 +122,9 @@ export default async function HoursPage() {
                           ? formatTime(b.ends_at, tz)
                           : `${formatDateLong(b.ends_at, tz)} ${formatTime(b.ends_at, tz)}`}
                         {b.reason && ` · ${b.reason}`}
+                      </p>
+                      <p className="text-xs text-stone-500">
+                        {(Array.isArray(b.professionals) ? b.professionals[0] : b.professionals)?.name ?? (multi ? "Studio inteiro" : "")}
                       </p>
                     </div>
                     <form action={deleteBlock}>

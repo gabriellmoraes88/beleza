@@ -29,10 +29,12 @@ export function AppointmentCard({
   appt,
   timeZone,
   showDate = false,
+  showProfessional = false,
 }: {
   appt: Appointment;
   timeZone: string;
   showDate?: boolean;
+  showProfessional?: boolean;
 }) {
   const active = appt.status === "pending" || appt.status === "confirmed";
   const customer = appt.customers;
@@ -46,7 +48,10 @@ export function AppointmentCard({
         <div className="min-w-0 flex-1">
           {showDate && <p className="text-xs capitalize text-stone-500">{formatDateLong(appt.starts_at, timeZone)}</p>}
           <p className="truncate font-medium">{customer?.name ?? "Cliente"}</p>
-          <p className="truncate text-sm text-stone-600">{appt.service_name}</p>
+          <p className="truncate text-sm text-stone-600">
+            {appt.service_name}
+            {showProfessional && appt.professionals?.name && ` · com ${appt.professionals.name}`}
+          </p>
         </div>
         <StatusBadge status={appt.status} />
       </summary>
