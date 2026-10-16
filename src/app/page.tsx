@@ -241,6 +241,24 @@ export default function Home() {
                 </li>
               ))}
             </ul>
+            <div className="mt-8 flex items-center justify-center gap-3 lg:justify-start">
+              <div className="flex -space-x-2" aria-hidden>
+                {["AC", "JS", "MR", "LP"].map((ini, i) => (
+                  <span
+                    key={ini}
+                    className={`flex h-9 w-9 items-center justify-center rounded-full border-2 border-white text-[11px] font-semibold text-white ${
+                      ["bg-stone-900", "bg-stone-700", "bg-stone-500", "bg-stone-400"][i]
+                    }`}
+                  >
+                    {ini}
+                  </span>
+                ))}
+              </div>
+              <p className="text-left text-sm text-stone-600">
+                <span className="font-semibold text-stone-900">+300 profissionais</span> já usam o Bellink
+                <br className="hidden sm:block" /> pelo Brasil
+              </p>
+            </div>
           </div>
           <PhoneMockup />
         </div>
@@ -329,7 +347,7 @@ export default function Home() {
           <div className="mx-auto mt-12 max-w-md rounded-[2rem] border border-stone-200 bg-white p-8 shadow-xl shadow-stone-200/50 sm:p-10">
             <p className="text-sm font-semibold text-stone-500">Plano Studio</p>
             <p className="mt-3 flex items-end gap-1">
-              <span className="text-5xl font-bold tracking-tight text-stone-900">R$ 49,90</span>
+              <span className="text-5xl font-bold tracking-tight text-stone-900">R$ 37,90</span>
               <span className="pb-1.5 text-stone-500">/mês</span>
             </p>
             <p className="mt-2 text-sm text-stone-600">14 dias grátis. Sem cartão de crédito para testar.</p>
@@ -383,7 +401,7 @@ export default function Home() {
               Sua agenda no link da bio.
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-lg text-stone-300">
-              Comece hoje e deixe suas clientes agendarem sozinhas.
+              Junte-se a mais de 300 profissionais pelo Brasil que já deixam as clientes agendarem sozinhas.
             </p>
             <Link
               href="/cadastro"
