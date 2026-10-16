@@ -4,15 +4,38 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { PublicStudio } from "@/lib/types";
 import { formatDuration, formatMoney } from "@/lib/format";
-import { addDays, formatLocalDate, formatTime, toLocalDate } from "@/lib/time";
+import { addDays, formatLocalDate, formatTime, weekdayOf } from "@/lib/time";
 import { bookAppointment, fetchSlots } from "./actions";
 
 type Service = PublicStudio["services"][number];
 
+const WEEK_HEADER = ["SEG", "TER", "QUA", "QUI", "SEX", "SÁB", "DOM"];
+
+function monthStart(dateStr: string) {
+  return `${dateStr.slice(0, 7)}-01`;
+}
+
+function shiftMonth(first: string, delta: number) {
+  const [y, m] = first.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1 + delta, 1)).toISOString().slice(0, 10);
+}
+
+function monthGrid(first: string): (string | null)[] {
+  const [y, m] = first.split("-").map(Number);
+  const daysInMonth = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const offset = (weekdayOf(first) + 6) % 7; // semana começa na segunda
+  return [
+    ...Array<null>(offset).fill(null),
+    ...Array.from({ length: daysInMonth }, (_, i) => addDays(first, i)),
+  ];
+}
+
 export function BookingFlow({ studio, today }: { studio: PublicStudio; today: string }) {
   const router = useRouter();
   const [service, setService] = useState<Service | null>(null);
+  const [step, setStep] = useState<"services" | "schedule">("services");
   const [date, setDate] = useState(today);
+  const [month, setMonth] = useState(monthStart(today));
   const [slots, setSlots] = useState<string[] | null>(null);
   const [slot, setSlot] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -20,31 +43,9 @@ export function BookingFlow({ studio, today }: { studio: PublicStudio; today: st
   const [submitting, startSubmitting] = useTransition();
   const accent = studio.primary_color;
   const tz = studio.timezone;
+  const lastDay = addDays(today, studio.max_advance_days);
 
-  const days = useMemo(() => {
-    const total = Math.min(studio.max_advance_days, 30);
-    return Array.from({ length: total + 1 }, (_, i) => addDays(today, i));
-  }, [today, studio.max_advance_days]);
-
-  function loadSlots(serviceId: string, d: string) {
-    setSlots(null);
-    setSlot(null);
-    startLoadingSlots(async () => {
-      setSlots(await fetchSlots(studio.slug, serviceId, d));
-    });
-  }
-
-  function chooseService(s: Service) {
-    setService(s);
-    setError(null);
-    loadSlots(s.id, date);
-  }
-
-  function chooseDate(d: string) {
-    setDate(d);
-    setError(null);
-    if (service) loadSlots(service.id, d);
-  }
+  const grid = useMemo(() => monthGrid(month), [month]);
 
   const grouped = useMemo(() => {
     const groups: Record<string, string[]> = { Manhã: [], Tarde: [], Noite: [] };
@@ -54,6 +55,30 @@ export function BookingFlow({ studio, today }: { studio: PublicStudio; today: st
     }
     return Object.entries(groups).filter(([, list]) => list.length > 0);
   }, [slots, tz]);
+
+  function loadSlots(serviceId: string, d: string) {
+    setSlots(null);
+    setSlot(null);
+    startLoadingSlots(async () => {
+      setSlots(await fetchSlots(studio.slug, serviceId, d));
+    });
+  }
+
+  function goToSchedule() {
+    if (!service) return;
+    setStep("schedule");
+    setError(null);
+    loadSlots(service.id, date);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function chooseDate(d: string) {
+    if (d < today || d > lastDay) return;
+    setDate(d);
+    setMonth(monthStart(d));
+    setError(null);
+    if (service) loadSlots(service.id, d);
+  }
 
   function submit(formData: FormData) {
     if (!service || !slot) return;
@@ -76,133 +101,262 @@ export function BookingFlow({ studio, today }: { studio: PublicStudio; today: st
     });
   }
 
-  // Etapa 1: serviço
-  if (!service) {
+  // Etapa 1: escolher o serviço
+  if (step === "services") {
     return (
-      <section>
-        <h2 className="mb-3 text-lg font-semibold text-stone-900">Serviços</h2>
-        <ul className="divide-y divide-stone-200 overflow-hidden rounded-2xl border border-stone-200 bg-white">
-          {studio.services.map((s) => (
-            <li key={s.id} className="flex items-center justify-between gap-4 px-4 py-4 sm:px-5">
-              <div className="min-w-0">
-                <p className="font-medium text-stone-900">{s.name}</p>
-                {s.description && <p className="mt-0.5 text-sm text-stone-600">{s.description}</p>}
-                <p className="mt-1 text-sm text-stone-500">
-                  {formatDuration(s.duration_minutes)}
+      <div className="grid gap-8 pb-24 lg:grid-cols-[1fr_340px] lg:pb-0">
+        <section className="min-w-0">
+          <h2 className="mb-2 text-lg font-semibold text-stone-900">Serviços</h2>
+          <ul className="divide-y divide-stone-200 border-y border-stone-200">
+            {studio.services.map((s) => {
+              const selected = service?.id === s.id;
+              return (
+                <li key={s.id} className="flex items-center gap-4 py-5">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-stone-900">{s.name}</p>
+                    <p className="mt-0.5 text-sm font-semibold text-stone-500">{formatDuration(s.duration_minutes)}</p>
+                    {s.description && <p className="mt-1 line-clamp-2 text-sm text-stone-600">{s.description}</p>}
+                  </div>
                   {s.price_cents > 0 && (
-                    <>
-                      {" · "}
+                    <p className="shrink-0 text-right">
+                      <span className="block text-[11px] text-stone-500">Valor</span>
                       <span className="font-semibold text-stone-900">{formatMoney(s.price_cents)}</span>
-                    </>
+                    </p>
                   )}
+                  <button
+                    type="button"
+                    onClick={() => setService(selected ? null : s)}
+                    className={`btn shrink-0 border ${
+                      selected
+                        ? "border-transparent text-white"
+                        : "border-stone-300 bg-white text-stone-900 hover:border-stone-900"
+                    }`}
+                    style={selected ? { backgroundColor: accent } : undefined}
+                    aria-pressed={selected}
+                  >
+                    {selected ? "Adicionado" : "Adicionar"}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+
+        {/* Resumo (computador) */}
+        <aside className="hidden lg:block">
+          <div className="sticky top-6 rounded-2xl border border-stone-200 bg-white">
+            <div className="min-h-32 p-5">
+              {service ? (
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-medium text-stone-900">{service.name}</p>
+                    <p className="text-sm text-stone-500">{formatDuration(service.duration_minutes)}</p>
+                  </div>
+                  <button type="button" onClick={() => setService(null)} className="text-sm text-stone-500 underline">
+                    Remover
+                  </button>
+                </div>
+              ) : (
+                <p className="text-stone-600">Nenhum serviço escolhido. Adicione um serviço para começar.</p>
+              )}
+            </div>
+            <div className="border-t border-stone-200 p-5">
+              <div className="mb-4 flex items-center justify-between">
+                <span className="text-sm font-semibold uppercase tracking-wide text-stone-700">Total</span>
+                <span className="text-lg font-semibold text-stone-900">{formatMoney(service?.price_cents ?? 0)}</span>
+              </div>
+              <button
+                type="button"
+                onClick={goToSchedule}
+                disabled={!service}
+                className="btn w-full py-3 text-white"
+                style={{ backgroundColor: accent }}
+              >
+                Escolher horário
+              </button>
+              <p className="mt-3 text-center text-xs text-stone-500">Sem pagamento online. Você paga no studio.</p>
+            </div>
+          </div>
+        </aside>
+
+        {/* Resumo (celular) */}
+        {service && (
+          <div className="fixed inset-x-0 bottom-0 z-10 border-t border-stone-200 bg-white px-4 py-3 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] lg:hidden">
+            <div className="mx-auto flex max-w-lg items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium text-stone-900">{service.name}</p>
+                <p className="text-sm text-stone-500">
+                  {formatDuration(service.duration_minutes)}
+                  {service.price_cents > 0 && ` · ${formatMoney(service.price_cents)}`}
                 </p>
               </div>
               <button
                 type="button"
-                onClick={() => chooseService(s)}
-                className="btn shrink-0 border border-stone-300 bg-white text-stone-900 hover:border-stone-900"
+                onClick={goToSchedule}
+                className="btn shrink-0 text-white"
+                style={{ backgroundColor: accent }}
               >
-                Agendar
+                Escolher horário
               </button>
-            </li>
-          ))}
-        </ul>
-      </section>
-    );
-  }
-
-  return (
-    <section className="space-y-5 rounded-2xl border border-stone-200 bg-white p-4 sm:p-5">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs uppercase tracking-wide text-stone-500">Serviço</p>
-          <p className="font-medium">{service.name}</p>
-          <p className="text-sm text-stone-600">
-            {formatDuration(service.duration_minutes)}
-            {service.price_cents > 0 && ` · ${formatMoney(service.price_cents)}`}
-          </p>
-        </div>
-        <button type="button" className="text-sm font-medium underline" onClick={() => setService(null)}>
-          Trocar
-        </button>
-      </div>
-
-      {/* Etapa 2: data */}
-      <div>
-        <p className="mb-2 text-sm font-medium text-stone-700">Escolha o dia</p>
-        <div className="-mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-2">
-          {days.map((d) => {
-            const selected = d === date;
-            return (
-              <button
-                key={d}
-                type="button"
-                onClick={() => chooseDate(d)}
-                className={`flex w-14 shrink-0 snap-start flex-col items-center rounded-xl border py-2 text-sm transition ${
-                  selected ? "border-transparent text-white" : "border-stone-200 text-stone-700"
-                }`}
-                style={selected ? { backgroundColor: accent } : undefined}
-                aria-pressed={selected}
-              >
-                <span className="text-xs capitalize">
-                  {d === today ? "Hoje" : formatLocalDate(d, { weekday: "short" }).replace(".", "")}
-                </span>
-                <span className="text-lg font-semibold">{d.slice(8)}</span>
-                <span className="text-[10px] capitalize opacity-80">
-                  {formatLocalDate(d, { month: "short" }).replace(".", "")}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Etapa 3: horário */}
-      <div>
-        <p className="mb-2 text-sm font-medium text-stone-700">Escolha o horário</p>
-        {loadingSlots || slots === null ? (
-          <p className="py-4 text-center text-sm text-stone-500">Carregando horários…</p>
-        ) : grouped.length === 0 ? (
-          <p className="rounded-xl bg-stone-50 py-4 text-center text-sm text-stone-600">
-            Nenhum horário livre neste dia. Tente outra data.
-          </p>
-        ) : (
-          <div className="space-y-3">
-            {grouped.map(([label, list]) => (
-              <div key={label}>
-                <p className="mb-1.5 text-xs text-stone-500">{label}</p>
-                <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
-                  {list.map((s) => {
-                    const selected = s === slot;
-                    return (
-                      <button
-                        key={s}
-                        type="button"
-                        onClick={() => setSlot(s)}
-                        className={`rounded-lg border py-2 text-sm font-medium transition ${
-                          selected ? "border-transparent text-white" : "border-stone-200 text-stone-800"
-                        }`}
-                        style={selected ? { backgroundColor: accent } : undefined}
-                        aria-pressed={selected}
-                      >
-                        {formatTime(s, tz)}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
+            </div>
           </div>
         )}
       </div>
+    );
+  }
 
-      {/* Etapa 4: dados */}
-      {slot && (
-        <form action={submit} className="space-y-3 border-t border-stone-100 pt-4">
-          <p className="text-sm text-stone-700">
-            <span className="capitalize">{formatLocalDate(toLocalDate(new Date(slot), tz), { weekday: "long", day: "numeric", month: "long" })}</span>{" "}
-            às <strong>{formatTime(slot, tz)}</strong>
-          </p>
+  // Etapa 2: data, horário e dados da cliente
+  const canPrev = month > monthStart(today);
+  const canNext = shiftMonth(month, 1) <= lastDay;
+
+  return (
+    <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
+      <section className="min-w-0">
+        <button type="button" onClick={() => setStep("services")} className="btn-secondary mb-5 rounded-full">
+          ‹ Voltar
+        </button>
+        <h2 className="mb-4 text-lg font-semibold text-stone-900">Data e horário do agendamento</h2>
+
+        <div className="grid gap-6 md:grid-cols-[280px_1fr]">
+          {/* Calendário */}
+          <div>
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-stone-800 first-letter:uppercase">{formatLocalDate(month, { month: "long", year: "numeric" }).replace(" de ", " ")}</p>
+              <div className="flex gap-1">
+                <button
+                  type="button"
+                  aria-label="Mês anterior"
+                  disabled={!canPrev}
+                  onClick={() => setMonth(shiftMonth(month, -1))}
+                  className="rounded-full px-2 py-1 text-lg text-stone-700 disabled:text-stone-300"
+                >
+                  ‹
+                </button>
+                <button
+                  type="button"
+                  aria-label="Próximo mês"
+                  disabled={!canNext}
+                  onClick={() => setMonth(shiftMonth(month, 1))}
+                  className="rounded-full px-2 py-1 text-lg text-stone-700 disabled:text-stone-300"
+                >
+                  ›
+                </button>
+              </div>
+            </div>
+            <div className="grid grid-cols-7 gap-1 text-center">
+              {WEEK_HEADER.map((w) => (
+                <span key={w} className="py-1 text-[11px] font-medium text-stone-500">
+                  {w}
+                </span>
+              ))}
+              {grid.map((d, i) => {
+                if (!d) return <span key={`vazio-${i}`} />;
+                const enabled = d >= today && d <= lastDay;
+                const selected = d === date;
+                return (
+                  <button
+                    key={d}
+                    type="button"
+                    disabled={!enabled}
+                    onClick={() => chooseDate(d)}
+                    aria-pressed={selected}
+                    className={`mx-auto flex h-9 w-9 items-center justify-center rounded-full text-sm transition ${
+                      selected
+                        ? "font-semibold text-white"
+                        : enabled
+                          ? "bg-stone-100 font-medium text-stone-900 hover:bg-stone-200"
+                          : "text-stone-300 line-through"
+                    }`}
+                    style={selected ? { backgroundColor: accent } : undefined}
+                  >
+                    {Number(d.slice(8))}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Horários */}
+          <div>
+            <p className="mb-3 text-center font-medium text-stone-900">Selecione a hora</p>
+            <div className="min-h-48 rounded-2xl border border-stone-200 bg-stone-50 p-4">
+              {loadingSlots || slots === null ? (
+                <p className="py-12 text-center text-sm text-stone-500">Carregando horários…</p>
+              ) : grouped.length === 0 ? (
+                <div className="py-10 text-center">
+                  <p className="text-sm text-stone-600">Nenhum horário disponível para a data selecionada.</p>
+                  {addDays(date, 1) <= lastDay && (
+                    <button
+                      type="button"
+                      onClick={() => chooseDate(addDays(date, 1))}
+                      className="mt-3 text-sm font-medium text-stone-900 underline"
+                    >
+                      Ver o dia seguinte →
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {grouped.map(([label, list]) => (
+                    <div key={label}>
+                      <p className="mb-1.5 text-xs text-stone-500">{label}</p>
+                      <div className="grid grid-cols-4 gap-2">
+                        {list.map((s) => {
+                          const selected = s === slot;
+                          return (
+                            <button
+                              key={s}
+                              type="button"
+                              onClick={() => setSlot(s)}
+                              className={`rounded-lg border py-2 text-sm font-medium transition ${
+                                selected
+                                  ? "border-transparent text-white"
+                                  : "border-stone-200 bg-white text-stone-800 hover:border-stone-400"
+                              }`}
+                              style={selected ? { backgroundColor: accent } : undefined}
+                              aria-pressed={selected}
+                            >
+                              {formatTime(s, tz)}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Resumo e dados da cliente */}
+      <aside className="space-y-4">
+        <div className="rounded-2xl border border-stone-200 bg-stone-50 p-5">
+          <p className="text-lg font-semibold text-stone-900">{studio.name}</p>
+          <dl className="mt-3 grid grid-cols-[1fr_auto_auto] gap-x-4 text-sm">
+            <dt className="text-[11px] font-medium uppercase text-stone-500">Data</dt>
+            <dt className="text-[11px] font-medium uppercase text-stone-500">Horário</dt>
+            <dt className="text-[11px] font-medium uppercase text-stone-500">Duração</dt>
+            <dd className="text-stone-800 first-letter:uppercase">
+              {formatLocalDate(date, { weekday: "long", day: "numeric", month: "long" })}
+            </dd>
+            <dd className="text-stone-800">{slot ? formatTime(slot, tz) : "-"}</dd>
+            <dd className="text-stone-800">{service && formatDuration(service.duration_minutes)}</dd>
+          </dl>
+        </div>
+
+        {service && (
+          <div className="flex items-start justify-between gap-3 rounded-2xl border border-stone-200 px-4 py-3">
+            <div>
+              <p className="text-sm font-medium text-stone-900">{service.name}</p>
+              <p className="text-xs text-stone-500">{formatDuration(service.duration_minutes)}</p>
+            </div>
+            {service.price_cents > 0 && <p className="text-sm text-stone-900">{formatMoney(service.price_cents)}</p>}
+          </div>
+        )}
+
+        <form action={submit} className="space-y-3 border-t border-stone-200 pt-4">
           <label className="block">
             <span className="label">Seu nome</span>
             <input className="input" name="name" autoComplete="name" required minLength={2} maxLength={80} />
@@ -232,20 +386,16 @@ export function BookingFlow({ studio, today }: { studio: PublicStudio; today: st
             type="submit"
             className="btn w-full py-3 text-base text-white"
             style={{ backgroundColor: accent }}
-            disabled={submitting}
+            disabled={!slot || submitting}
           >
-            {submitting ? "Agendando…" : "Confirmar agendamento"}
+            {submitting ? "Agendando…" : slot ? "Confirmar agendamento" : "Escolha um horário"}
           </button>
           <p className="text-center text-xs text-stone-500">
-            Usamos seu nome e telefone apenas para este agendamento com {studio.name}.
+            Sem cadastro e sem pagamento online. Usamos seu nome e telefone apenas para este agendamento com{" "}
+            {studio.name}.
           </p>
         </form>
-      )}
-      {!slot && error && (
-        <p role="alert" className="rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-800">
-          {error}
-        </p>
-      )}
-    </section>
+      </aside>
+    </div>
   );
 }
