@@ -79,24 +79,30 @@ export function BookingFlow({ studio, today }: { studio: PublicStudio; today: st
   // Etapa 1: serviço
   if (!service) {
     return (
-      <section className="card">
-        <h2 className="mb-3 text-lg font-semibold">Escolha o serviço</h2>
-        <ul className="space-y-2">
+      <section>
+        <h2 className="mb-3 text-lg font-semibold text-stone-900">Serviços</h2>
+        <ul className="divide-y divide-stone-200 overflow-hidden rounded-2xl border border-stone-200 bg-white">
           {studio.services.map((s) => (
-            <li key={s.id}>
+            <li key={s.id} className="flex items-center justify-between gap-4 px-4 py-4 sm:px-5">
+              <div className="min-w-0">
+                <p className="font-medium text-stone-900">{s.name}</p>
+                {s.description && <p className="mt-0.5 text-sm text-stone-600">{s.description}</p>}
+                <p className="mt-1 text-sm text-stone-500">
+                  {formatDuration(s.duration_minutes)}
+                  {s.price_cents > 0 && (
+                    <>
+                      {" · "}
+                      <span className="font-semibold text-stone-900">{formatMoney(s.price_cents)}</span>
+                    </>
+                  )}
+                </p>
+              </div>
               <button
                 type="button"
                 onClick={() => chooseService(s)}
-                className="flex w-full items-center justify-between gap-3 rounded-xl border border-stone-200 px-4 py-3 text-left transition hover:border-stone-400 active:scale-[0.99]"
+                className="btn shrink-0 border border-stone-300 bg-white text-stone-900 hover:border-stone-900"
               >
-                <span>
-                  <span className="block font-medium text-stone-900">{s.name}</span>
-                  {s.description && <span className="block text-sm text-stone-600">{s.description}</span>}
-                  <span className="mt-0.5 block text-xs text-stone-500">{formatDuration(s.duration_minutes)}</span>
-                </span>
-                <span className="shrink-0 font-semibold" style={{ color: accent }}>
-                  {s.price_cents > 0 ? formatMoney(s.price_cents) : ""}
-                </span>
+                Agendar
               </button>
             </li>
           ))}
@@ -106,7 +112,7 @@ export function BookingFlow({ studio, today }: { studio: PublicStudio; today: st
   }
 
   return (
-    <section className="card space-y-5">
+    <section className="space-y-5 rounded-2xl border border-stone-200 bg-white p-4 sm:p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-wide text-stone-500">Serviço</p>
