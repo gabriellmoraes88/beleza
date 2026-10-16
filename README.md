@@ -31,7 +31,7 @@ Cada studio tem um link público (`/s/espaco-da-ana`) onde a cliente agenda sem 
 
 ## Regras comerciais implementadas
 
-- Um plano pago (`plans.code = 'studio'`, R$ 49,90 como valor provisório, editável na tabela) com **14 dias de teste sem cartão**.
+- Um plano pago (`plans.code = 'studio'`, R$ 37,90 por mês, editável na tabela) com **14 dias de teste sem cartão**.
 - Ao assinar durante o teste, a primeira cobrança vence no fim do teste. A cliente paga por Pix, boleto ou cartão na fatura do Asaas.
 - Cobrança criada **não** é pagamento: o acesso só muda com `PAYMENT_CONFIRMED`/`PAYMENT_RECEIVED`.
 - Vencida: tolerância de `BILLING_GRACE_DAYS` (padrão 5 dias). Depois disso, o painel fica somente leitura e o agendamento online pausa.
