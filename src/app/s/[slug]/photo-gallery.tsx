@@ -18,7 +18,7 @@ export function PhotoGallery({ urls, name }: { urls: string[]; name: string }) {
       <div
         ref={track}
         onScroll={(e) => setIndex(Math.round(e.currentTarget.scrollLeft / e.currentTarget.clientWidth))}
-        className="flex aspect-[4/3] snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] sm:aspect-[16/10]"
+        className="flex aspect-[16/9] snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] sm:aspect-[16/10]"
       >
         {urls.map((url, i) => (
           // eslint-disable-next-line @next/next/no-img-element
