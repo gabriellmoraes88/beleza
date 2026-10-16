@@ -66,7 +66,7 @@ export default async function DashboardPage() {
     <>
       <div className="mb-5">
         <p className="text-sm capitalize text-stone-500">{formatDateLong(new Date(), tz)}</p>
-        <h1 className="text-2xl font-semibold tracking-tight">Olá{studio.owner_name ? `, ${studio.owner_name.split(" ")[0]}` : ""}!</h1>
+        <h1 className="text-3xl text-ink">Olá{studio.owner_name ? `, ${studio.owner_name.split(" ")[0]}` : ""}!</h1>
       </div>
 
       {pendingSteps.length > 0 && (

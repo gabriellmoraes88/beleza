@@ -72,7 +72,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     method,
     headers: {
       "Content-Type": "application/json",
-      "User-Agent": "beleza-saas",
+      "User-Agent": "bellink-saas",
       access_token: apiKey,
     },
     body: body ? JSON.stringify(body) : undefined,

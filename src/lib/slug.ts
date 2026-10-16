@@ -12,7 +12,7 @@ export function slugify(input: string): string {
 export const SLUG_REGEX = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
 // Endereços reservados para evitar confusão com páginas do sistema.
-export const RESERVED_SLUGS = new Set(["admin", "api", "painel", "entrar", "cadastro", "suporte", "ajuda", "beleza"]);
+export const RESERVED_SLUGS = new Set(["admin", "api", "painel", "entrar", "cadastro", "suporte", "ajuda", "beleza", "bellink"]);
 
 export function validateSlug(slug: string): string | null {
   if (slug.length < 3 || slug.length > 40) return "O endereço precisa ter entre 3 e 40 caracteres.";

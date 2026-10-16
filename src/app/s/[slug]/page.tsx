@@ -28,7 +28,7 @@ export default async function PublicStudioPage({ params }: PageProps<"/s/[slug]"
   const studio = await getStudio(slug);
   if (!studio) notFound();
 
-  const color = studio.primary_color || "#db2777";
+  const color = studio.primary_color || "#9a5b60";
 
   return (
     <main className="flex-1 pb-16" style={{ ["--accent" as string]: color }}>

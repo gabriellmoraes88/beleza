@@ -1,6 +1,6 @@
-# Beleza
+# Bellink
 
-Plataforma SaaS de agendamento online para manicures, nail designers, cabeleireiras, esteticistas e pequenos studios.
+Plataforma SaaS de agendamento online para manicures, nail designers, cabeleireiras, esteticistas e pequenos studios. Slogan: "Sua agenda no link da bio."
 
 Cada studio tem um link público (`/s/espaco-da-ana`) onde a cliente agenda sem criar conta. A profissional gerencia agenda, serviços, horários, clientes e assinatura num painel. A cobrança recorrente é feita pelo Asaas.
 
