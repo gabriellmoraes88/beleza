@@ -4,10 +4,17 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Studio, Subscription } from "@/lib/types";
 
+/**
+ * Usuário logado a partir do token da sessão. getClaims confere a assinatura do
+ * token localmente (chaves públicas em cache), sem ida ao servidor de login a
+ * cada clique; o proxy já renovou a sessão nesta requisição.
+ */
 export const getUser = cache(async () => {
   const supabase = await createClient();
-  const { data } = await supabase.auth.getUser();
-  return data.user ?? null;
+  const { data } = await supabase.auth.getClaims();
+  const claims = data?.claims;
+  if (!claims?.sub) return null;
+  return { id: claims.sub, email: typeof claims.email === "string" ? claims.email : null };
 });
 
 export const getStudioContext = cache(async () => {
