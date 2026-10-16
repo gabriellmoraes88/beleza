@@ -59,6 +59,17 @@ export class AsaasError extends Error {
   }
 }
 
+/** Situação da configuração, sem nunca expor a chave. */
+export function asaasEnvironment() {
+  const baseUrl = (process.env.ASAAS_API_URL ?? "https://api-sandbox.asaas.com/v3").replace(/\/$/, "");
+  return {
+    hasKey: !!process.env.ASAAS_API_KEY,
+    hasWebhookToken: !!process.env.ASAAS_WEBHOOK_TOKEN,
+    sandbox: baseUrl.includes("sandbox"),
+    baseUrl,
+  };
+}
+
 function config() {
   const apiKey = process.env.ASAAS_API_KEY;
   if (!apiKey) throw new Error("ASAAS_API_KEY não configurada");
@@ -109,6 +120,9 @@ export const asaas = {
   getSubscription: (id: string) => request<AsaasSubscription>("GET", `/subscriptions/${id}`),
 
   cancelSubscription: (id: string) => request<{ deleted: boolean }>("DELETE", `/subscriptions/${id}`),
+
+  /** Saldo da conta; usado pelo admin para testar se a chave funciona. */
+  getBalance: () => request<{ balance: number }>("GET", "/finance/balance"),
 
   listSubscriptionPayments: (id: string) =>
     request<{ data: AsaasPayment[] }>("GET", `/subscriptions/${id}/payments?limit=20`),

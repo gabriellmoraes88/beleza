@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { createPublicClient } from "@/lib/supabase/public";
+import { formatMoney } from "@/lib/format";
 import {
   Activity,
   Brush,
@@ -58,14 +60,16 @@ const steps = [
   { title: "Receba agendamentos", text: "Cada reserva cai direto na sua agenda, sem conversa de ida e volta." },
 ];
 
-const faq = [
+const faq = (trialDays: number) => [
   {
     q: "Minha cliente precisa baixar aplicativo ou criar conta?",
     a: "Não. Ela abre o seu link, escolhe o serviço, o dia e o horário e informa só nome e telefone.",
   },
   {
     q: "Preciso de cartão de crédito para testar?",
-    a: "Não. Você usa tudo por 14 dias sem cadastrar cartão. Se gostar, assina depois.",
+    a: trialDays
+      ? `Não. Você usa tudo por ${trialDays} dias sem cadastrar cartão. Se gostar, assina depois.`
+      : "Não é preciso cartão para criar a conta. Você só informa a forma de pagamento ao assinar.",
   },
   {
     q: "Consigo bloquear folgas, almoço e feriados?",
@@ -212,7 +216,22 @@ function AgendaMockup() {
   );
 }
 
-export default function Home() {
+// Preço e dias de teste vêm do plano (editáveis no /admin); a página é refeita a cada 5 minutos.
+export const revalidate = 300;
+
+async function getPlan() {
+  try {
+    const { data } = await createPublicClient().from("plans").select("price_cents, trial_days").eq("code", "studio").maybeSingle();
+    if (data) return data;
+  } catch {
+    // Sem banco (ex.: build local sem variáveis): usa o padrão.
+  }
+  return { price_cents: 3790, trial_days: 14 };
+}
+
+export default async function Home() {
+  const plan = await getPlan();
+  const trialCta = plan.trial_days ? `Começar ${plan.trial_days} dias grátis` : "Começar agora";
   return (
     <main className="flex-1 bg-white">
       {/* Topo */}
@@ -256,7 +275,7 @@ export default function Home() {
             </p>
             <div className="mt-9 flex flex-col items-center gap-3 sm:flex-row sm:justify-center lg:justify-start">
               <Link href="/cadastro" className="btn-primary rounded-full px-7 py-3.5 text-base">
-                Começar 14 dias grátis
+                {trialCta}
               </Link>
               <a href="#como-funciona" className="btn-secondary rounded-full px-7 py-3.5 text-base">
                 Ver como funciona
@@ -375,7 +394,7 @@ export default function Home() {
               href="/cadastro"
               className="btn mt-8 rounded-full bg-white px-7 py-3.5 text-base text-stone-900 hover:bg-stone-200"
             >
-              Começar 14 dias grátis
+              {trialCta}
             </Link>
           </div>
           <AgendaMockup />
@@ -392,10 +411,12 @@ export default function Home() {
           <div className="mx-auto mt-12 max-w-md rounded-[2rem] border border-stone-200 bg-white p-8 shadow-xl shadow-stone-200/50 sm:p-10">
             <p className="text-sm font-semibold text-stone-500">Plano Studio</p>
             <p className="mt-3 flex items-end gap-1">
-              <span className="text-5xl font-bold tracking-tight text-stone-900">R$ 37,90</span>
+              <span className="text-5xl font-bold tracking-tight text-stone-900">{formatMoney(plan.price_cents)}</span>
               <span className="pb-1.5 text-stone-500">/mês</span>
             </p>
-            <p className="mt-2 text-sm text-stone-600">14 dias grátis. Sem cartão de crédito para testar.</p>
+            <p className="mt-2 text-sm text-stone-600">
+              {plan.trial_days ? `${plan.trial_days} dias grátis. Sem cartão de crédito para testar.` : "Sem fidelidade. Cancele quando quiser."}
+            </p>
             <ul className="mt-7 space-y-3 text-stone-700">
               {[
                 "Link de agendamento exclusivo",
@@ -414,7 +435,7 @@ export default function Home() {
               ))}
             </ul>
             <Link href="/cadastro" className="btn-primary mt-8 w-full rounded-full py-3.5 text-base">
-              Começar 14 dias grátis
+              {trialCta}
             </Link>
           </div>
         </div>
@@ -425,7 +446,7 @@ export default function Home() {
         <div className="mx-auto max-w-3xl px-4">
           <h2 className="text-center text-3xl font-bold tracking-tight text-stone-900 sm:text-4xl">Perguntas frequentes</h2>
           <div className="mt-10 divide-y divide-stone-200 rounded-3xl border border-stone-200 bg-white">
-            {faq.map((item) => (
+            {faq(plan.trial_days).map((item) => (
               <details key={item.q} className="group px-6 py-5">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-medium text-stone-900">
                   {item.q}
@@ -452,7 +473,7 @@ export default function Home() {
               href="/cadastro"
               className="btn mt-8 rounded-full bg-white px-8 py-3.5 text-base text-stone-900 hover:bg-stone-200"
             >
-              Começar 14 dias grátis
+              {trialCta}
             </Link>
             <p className="mt-3 text-sm text-stone-400">Sem cartão de crédito para testar.</p>
           </div>
