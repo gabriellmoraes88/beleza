@@ -5,12 +5,21 @@ import { formatPhone } from "@/lib/phone";
 import { ActionForm, SubmitButton } from "@/components/form";
 import { Field, PageHeader } from "@/components/ui";
 import { ShareLink } from "@/components/share-link";
+import { ConfirmButton } from "@/components/form";
+import { MAX_PHOTOS, photoUrl } from "@/lib/photos";
 import { updateStudio } from "./actions";
+import { deletePhoto, uploadPhoto } from "./photo-actions";
 
 export const metadata: Metadata = { title: "Configurações do studio" };
 
 export default async function SettingsPage() {
-  const { studio } = await requireStudio();
+  const { supabase, studio } = await requireStudio();
+  const { data: photos } = await supabase
+    .from("studio_photos")
+    .select("id, path")
+    .eq("studio_id", studio.id)
+    .order("sort_order")
+    .order("created_at");
   const url = `${SITE_URL()}/s/${studio.slug}`;
 
   return (
@@ -20,6 +29,41 @@ export default async function SettingsPage() {
         <h2 className="mb-3 font-semibold">Seu link de agendamento</h2>
         <ShareLink url={url} studioName={studio.name} />
       </div>
+
+      <section className="mb-5 card">
+        <h2 className="font-semibold">Fotos do studio</h2>
+        <p className="mt-1 text-sm text-stone-600">
+          Aparecem no topo da sua página de agendamento. Até {MAX_PHOTOS} fotos, de até 5 MB cada (JPG, PNG ou WEBP).
+        </p>
+        {photos && photos.length > 0 && (
+          <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {photos.map((p) => (
+              <li key={p.id} className="overflow-hidden rounded-xl border border-stone-200">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={photoUrl(p.path)} alt="" className="aspect-[4/3] w-full object-cover" />
+                <form action={deletePhoto} className="p-2">
+                  <input type="hidden" name="id" value={p.id} />
+                  <ConfirmButton message="Remover esta foto?" className="btn-ghost w-full py-1.5 text-xs text-rose-700">
+                    Remover
+                  </ConfirmButton>
+                </form>
+              </li>
+            ))}
+          </ul>
+        )}
+        {(photos?.length ?? 0) < MAX_PHOTOS && (
+          <ActionForm action={uploadPhoto} className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <input
+              type="file"
+              name="photo"
+              accept="image/jpeg,image/png,image/webp"
+              required
+              className="block w-full text-sm text-stone-700 file:mr-3 file:rounded-xl file:border-0 file:bg-stone-100 file:px-4 file:py-2.5 file:text-sm file:font-semibold file:text-stone-800"
+            />
+            <SubmitButton pendingText="Enviando…">Adicionar foto</SubmitButton>
+          </ActionForm>
+        )}
+      </section>
 
       <ActionForm action={updateStudio} className="space-y-5">
         <section className="card grid gap-4 sm:grid-cols-2">

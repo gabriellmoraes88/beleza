@@ -3,6 +3,10 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Painel e página pública dependem de dados por requisição (sessão, agenda em
   // tempo real), então usamos o modelo dinâmico padrão sem Cache Components.
+  experimental: {
+    // Envio de fotos do studio (até 5 MB por foto).
+    serverActions: { bodySizeLimit: "6mb" },
+  },
   turbopack: {
     rules: {
       "*.css": {

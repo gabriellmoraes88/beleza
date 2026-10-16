@@ -44,6 +44,6 @@ jobs:
           createdb beleza_test
           psql -d beleza_test -v ON_ERROR_STOP=1 -q \
             -f supabase/tests/stub_supabase.sql \
-            -f supabase/migrations/20261016000000_schema_inicial.sql
+            $(for f in supabase/migrations/*.sql; do printf -- "-f %s " "$f"; done)
           psql -d beleza_test -v ON_ERROR_STOP=1 -q -f supabase/tests/agendamento_test.sql | tee out.txt
           grep -q "TODOS OS TESTES PASSARAM" out.txt

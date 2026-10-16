@@ -87,6 +87,7 @@ export interface PublicStudio {
     duration_minutes: number;
     price_cents: number;
   }[];
+  photos?: string[];
 }
 
 export type ActionState = { ok?: boolean; error?: string; message?: string } | undefined;

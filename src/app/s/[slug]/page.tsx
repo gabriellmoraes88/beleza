@@ -7,6 +7,8 @@ import type { PublicStudio } from "@/lib/types";
 import { todayIn } from "@/lib/time";
 import { BookingFlow } from "./booking-flow";
 import { ShareButton } from "./share-button";
+import { PhotoGallery } from "./photo-gallery";
+import { photoUrl } from "@/lib/photos";
 
 const getStudio = cache(async (slug: string) => {
   const supabase = createPublicClient();
@@ -31,6 +33,7 @@ export default async function PublicStudioPage({ params }: PageProps<"/s/[slug]"
 
   const color = studio.primary_color || "#292524";
 
+  const photos = studio.photos ?? [];
   const instagram = studio.instagram?.replace(/^@/, "");
   const location = [studio.address, studio.city].filter(Boolean).join(" · ");
   const initials = studio.name
@@ -43,8 +46,10 @@ export default async function PublicStudioPage({ params }: PageProps<"/s/[slug]"
     <main className="flex-1 bg-white pb-16">
       <div className="mx-auto max-w-6xl px-4 pt-4 sm:pt-8">
         {/* Capa */}
-        <section className="grid items-center gap-6 rounded-3xl bg-stone-100 p-6 sm:p-10 md:grid-cols-[1fr_auto]">
-          <div className="min-w-0">
+        <section
+          className={`grid items-center gap-6 rounded-3xl bg-stone-100 p-4 sm:p-8 ${photos.length > 0 ? "md:grid-cols-2" : "md:grid-cols-[1fr_auto]"}`}
+        >
+          <div className="min-w-0 p-2 sm:p-2">
             <h1 className="text-3xl font-bold tracking-tight text-stone-900 sm:text-4xl">{studio.name}</h1>
             {location && <p className="mt-3 text-sm text-stone-600">{location}</p>}
             <div className="mt-6 flex flex-wrap gap-2">
@@ -64,7 +69,9 @@ export default async function PublicStudioPage({ params }: PageProps<"/s/[slug]"
               )}
             </div>
           </div>
-          {studio.logo_url ? (
+          {photos.length > 0 ? (
+            <PhotoGallery urls={photos.map(photoUrl)} name={studio.name} />
+          ) : studio.logo_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={studio.logo_url}
