@@ -8,7 +8,8 @@ import { ShareLink } from "@/components/share-link";
 import { ConfirmButton } from "@/components/form";
 import { MAX_PHOTOS, photoUrl } from "@/lib/photos";
 import { updateStudio } from "./actions";
-import { deletePhoto, uploadPhoto } from "./photo-actions";
+import { deletePhoto, removeLogo, uploadLogo, uploadPhoto } from "./photo-actions";
+import { ImageUpload } from "@/components/image-upload";
 
 export const metadata: Metadata = { title: "Configurações do studio" };
 
@@ -31,9 +32,36 @@ export default async function SettingsPage() {
       </div>
 
       <section className="mb-5 card">
+        <h2 className="font-semibold">Logotipo</h2>
+        <p className="mt-1 text-sm text-stone-600">
+          Escolha uma imagem do celular ou do computador. Aparece na sua página quando não houver fotos.
+        </p>
+        <div className="mt-4 flex items-center gap-4">
+          {studio.logo_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={studio.logo_url} alt="" className="h-20 w-20 rounded-2xl border border-stone-200 object-cover" />
+          ) : (
+            <div className="flex h-20 w-20 items-center justify-center rounded-2xl border border-dashed border-stone-300 text-xs text-stone-400">
+              Sem logo
+            </div>
+          )}
+          <div className="flex flex-wrap items-start gap-2">
+            <ImageUpload action={uploadLogo} label={studio.logo_url ? "Trocar logotipo" : "Enviar logotipo"} />
+            {studio.logo_url && (
+              <form action={removeLogo}>
+                <ConfirmButton message="Remover o logotipo?" className="btn-ghost text-rose-700">
+                  Remover
+                </ConfirmButton>
+              </form>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section className="mb-5 card">
         <h2 className="font-semibold">Fotos do studio</h2>
         <p className="mt-1 text-sm text-stone-600">
-          Aparecem no topo da sua página de agendamento. Até {MAX_PHOTOS} fotos, de até 5 MB cada (JPG, PNG ou WEBP).
+          Aparecem no topo da sua página de agendamento. Escolha até {MAX_PHOTOS} fotos do celular ou do computador.
         </p>
         {photos && photos.length > 0 && (
           <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -52,16 +80,14 @@ export default async function SettingsPage() {
           </ul>
         )}
         {(photos?.length ?? 0) < MAX_PHOTOS && (
-          <ActionForm action={uploadPhoto} className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <input
-              type="file"
-              name="photo"
-              accept="image/jpeg,image/png,image/webp"
-              required
-              className="block w-full text-sm text-stone-700 file:mr-3 file:rounded-xl file:border-0 file:bg-stone-100 file:px-4 file:py-2.5 file:text-sm file:font-semibold file:text-stone-800"
+          <div className="mt-4">
+            <ImageUpload
+              action={uploadPhoto}
+              label="Adicionar fotos"
+              multiple
+              max={MAX_PHOTOS - (photos?.length ?? 0)}
             />
-            <SubmitButton pendingText="Enviando…">Adicionar foto</SubmitButton>
-          </ActionForm>
+          </div>
         )}
       </section>
 
@@ -95,9 +121,6 @@ export default async function SettingsPage() {
               <textarea className="input" name="description" rows={2} maxLength={500} defaultValue={studio.description ?? ""} />
             </Field>
           </div>
-          <Field label="Link do logotipo (opcional)" hint="Upload de imagem chega numa próxima versão.">
-            <input className="input" name="logo_url" type="url" defaultValue={studio.logo_url ?? ""} placeholder="https://…" />
-          </Field>
           <Field label="Cor principal">
             <input className="h-11 w-full rounded-xl border border-stone-300" type="color" name="primary_color" defaultValue={studio.primary_color} />
           </Field>

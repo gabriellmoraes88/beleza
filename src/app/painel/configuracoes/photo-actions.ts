@@ -6,20 +6,65 @@ import { z } from "zod";
 import { requireStudio } from "@/lib/studio";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { friendlyError } from "@/lib/errors";
-import { MAX_PHOTO_BYTES, MAX_PHOTOS, PHOTO_BUCKET, detectImageType } from "@/lib/photos";
+import { MAX_PHOTO_BYTES, MAX_PHOTOS, PHOTO_BUCKET, detectImageType, photoUrl } from "@/lib/photos";
 import type { ActionState } from "@/lib/types";
 
 const CONTENT_TYPE = { jpg: "image/jpeg", png: "image/png", webp: "image/webp" } as const;
 
-export async function uploadPhoto(_: ActionState, formData: FormData): Promise<ActionState> {
-  const { supabase, studio } = await requireStudio();
+async function readImage(formData: FormData) {
   const file = formData.get("photo");
-  if (!(file instanceof File) || file.size === 0) return { error: "Escolha uma foto." };
-  if (file.size > MAX_PHOTO_BYTES) return { error: "A foto pode ter no máximo 5 MB." };
-
+  if (!(file instanceof File) || file.size === 0) return { error: "Escolha uma foto." } as const;
+  if (file.size > MAX_PHOTO_BYTES) return { error: "A foto pode ter no máximo 5 MB." } as const;
   const bytes = new Uint8Array(await file.arrayBuffer());
   const type = detectImageType(bytes);
-  if (!type) return { error: "Envie uma imagem JPG, PNG ou WEBP." };
+  if (!type) return { error: "Envie uma imagem JPG, PNG ou WEBP." } as const;
+  return { bytes, type } as const;
+}
+
+/** Remove do Storage um arquivo nosso a partir da URL pública salva no banco. */
+async function removeByUrl(url: string | null, studioId: string) {
+  const prefix = photoUrl(`${studioId}/`);
+  if (!url || !url.startsWith(prefix)) return;
+  await createAdminClient().storage.from(PHOTO_BUCKET).remove([`${studioId}/${url.slice(prefix.length)}`]);
+}
+
+export async function uploadLogo(_: ActionState, formData: FormData): Promise<ActionState> {
+  const { supabase, studio } = await requireStudio();
+  const image = await readImage(formData);
+  if ("error" in image) return { error: image.error };
+
+  // Grava o novo endereço com o usuário logado (RLS confere studio e assinatura) e só então envia.
+  const path = `${studio.id}/logo-${randomUUID()}.${image.type}`;
+  const { error } = await supabase.from("studios").update({ logo_url: photoUrl(path) }).eq("id", studio.id);
+  if (error) return { error: friendlyError(error) };
+
+  const { error: uploadError } = await createAdminClient()
+    .storage.from(PHOTO_BUCKET)
+    .upload(path, image.bytes, { contentType: CONTENT_TYPE[image.type], cacheControl: "31536000", upsert: false });
+  if (uploadError) {
+    await supabase.from("studios").update({ logo_url: studio.logo_url }).eq("id", studio.id);
+    return { error: "Não foi possível enviar a imagem. Tente novamente." };
+  }
+
+  await removeByUrl(studio.logo_url, studio.id);
+  revalidatePath("/painel", "layout");
+  revalidatePath(`/s/${studio.slug}`);
+  return { message: "Logotipo atualizado." };
+}
+
+export async function removeLogo() {
+  const { supabase, studio } = await requireStudio();
+  const { error } = await supabase.from("studios").update({ logo_url: null }).eq("id", studio.id);
+  if (!error) await removeByUrl(studio.logo_url, studio.id);
+  revalidatePath("/painel", "layout");
+  revalidatePath(`/s/${studio.slug}`);
+}
+
+export async function uploadPhoto(_: ActionState, formData: FormData): Promise<ActionState> {
+  const { supabase, studio } = await requireStudio();
+  const image = await readImage(formData);
+  if ("error" in image) return { error: image.error };
+  const { bytes, type } = image;
 
   const { count } = await supabase
     .from("studio_photos")
