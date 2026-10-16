@@ -10,6 +10,16 @@
   --color-brand-700: #1c1917;
 }
 
+/* No celular, letras um pouco maiores (todos os tamanhos em rem acompanham). */
+html {
+  font-size: 106.25%;
+}
+@media (min-width: 640px) {
+  html {
+    font-size: 100%;
+  }
+}
+
 body {
   background: #fafaf9;
   color: #1c1917;
@@ -17,7 +27,7 @@ body {
 
 /* Campos de formulário consistentes e confortáveis no celular */
 @utility input {
-  @apply block w-full rounded-xl border border-stone-300 bg-white px-3.5 py-2.5 text-base text-stone-900 shadow-sm outline-none transition placeholder:text-stone-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 disabled:bg-stone-100;
+  @apply block w-full min-w-0 rounded-xl border border-stone-300 bg-white px-3.5 py-2.5 text-base text-stone-900 shadow-sm outline-none transition placeholder:text-stone-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 disabled:bg-stone-100;
 }
 @utility label {
   @apply mb-1.5 block text-sm font-medium text-stone-700;

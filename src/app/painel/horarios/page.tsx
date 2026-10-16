@@ -51,15 +51,15 @@ export default async function HoursPage() {
                   <input type="checkbox" name={`open_${d}`} defaultChecked={open} className="h-4 w-4" />
                   {WEEKDAYS[d]}
                 </label>
-                <div className="mt-2 grid grid-cols-[auto_1fr_auto_1fr] items-center gap-2 text-sm">
+                <div className="mt-2 grid grid-cols-[auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 text-sm">
                   <span className="text-stone-500">das</span>
-                  <input className="input py-1.5" type="time" name={`start1_${d}`} defaultValue={a?.start_time?.slice(0, 5) ?? "09:00"} />
+                  <input className="input px-2.5 py-1.5" type="time" name={`start1_${d}`} defaultValue={a?.start_time?.slice(0, 5) ?? "09:00"} />
                   <span className="text-stone-500">às</span>
-                  <input className="input py-1.5" type="time" name={`end1_${d}`} defaultValue={a?.end_time?.slice(0, 5) ?? "12:00"} />
+                  <input className="input px-2.5 py-1.5" type="time" name={`end1_${d}`} defaultValue={a?.end_time?.slice(0, 5) ?? "12:00"} />
                   <span className="text-stone-500">das</span>
-                  <input className="input py-1.5" type="time" name={`start2_${d}`} defaultValue={b?.start_time?.slice(0, 5) ?? (open ? "" : "13:00")} />
+                  <input className="input px-2.5 py-1.5" type="time" name={`start2_${d}`} defaultValue={b?.start_time?.slice(0, 5) ?? (open ? "" : "13:00")} />
                   <span className="text-stone-500">às</span>
-                  <input className="input py-1.5" type="time" name={`end2_${d}`} defaultValue={b?.end_time?.slice(0, 5) ?? (open ? "" : "19:00")} />
+                  <input className="input px-2.5 py-1.5" type="time" name={`end2_${d}`} defaultValue={b?.end_time?.slice(0, 5) ?? (open ? "" : "19:00")} />
                 </div>
               </fieldset>
             );

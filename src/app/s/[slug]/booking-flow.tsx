@@ -134,7 +134,7 @@ export function BookingFlow({ studio, today }: { studio: PublicStudio; today: st
                   </div>
                   {s.price_cents > 0 && (
                     <p className="shrink-0 text-right">
-                      <span className="block text-[11px] text-stone-500">Valor</span>
+                      <span className="block text-xs text-stone-500">Valor</span>
                       <span className="font-semibold text-stone-900">{formatMoney(s.price_cents)}</span>
                     </p>
                   )}
@@ -273,7 +273,7 @@ export function BookingFlow({ studio, today }: { studio: PublicStudio; today: st
             </div>
             <div className="grid grid-cols-7 gap-1 text-center">
               {WEEK_HEADER.map((w) => (
-                <span key={w} className="py-1 text-[11px] font-medium text-stone-500">
+                <span key={w} className="py-1 text-xs font-medium text-stone-500">
                   {w}
                 </span>
               ))}
@@ -363,9 +363,9 @@ export function BookingFlow({ studio, today }: { studio: PublicStudio; today: st
         <div className="rounded-2xl border border-stone-200 bg-stone-50 p-5">
           <p className="text-lg font-semibold text-stone-900">{studio.name}</p>
           <dl className="mt-3 grid grid-cols-[1fr_auto_auto] gap-x-4 text-sm">
-            <dt className="text-[11px] font-medium uppercase text-stone-500">Data</dt>
-            <dt className="text-[11px] font-medium uppercase text-stone-500">Horário</dt>
-            <dt className="text-[11px] font-medium uppercase text-stone-500">Duração</dt>
+            <dt className="text-xs font-medium uppercase text-stone-500">Data</dt>
+            <dt className="text-xs font-medium uppercase text-stone-500">Horário</dt>
+            <dt className="text-xs font-medium uppercase text-stone-500">Duração</dt>
             <dd className="text-stone-800 first-letter:uppercase">
               {formatLocalDate(date, { weekday: "long", day: "numeric", month: "long" })}
             </dd>
