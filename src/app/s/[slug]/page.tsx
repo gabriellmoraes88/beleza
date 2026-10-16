@@ -9,6 +9,7 @@ import { BookingFlow } from "./booking-flow";
 import { ShareButton } from "./share-button";
 import { PhotoGallery } from "./photo-gallery";
 import { photoUrl } from "@/lib/photos";
+import { Info, MessageCircle } from "lucide-react";
 
 const getStudio = cache(async (slug: string) => {
   const supabase = createPublicClient();
@@ -36,6 +37,7 @@ export default async function PublicStudioPage({ params }: PageProps<"/s/[slug]"
   const photos = studio.photos ?? [];
   const instagram = studio.instagram?.replace(/^@/, "");
   const location = [studio.address, studio.city].filter(Boolean).join(" · ");
+  const pill = "btn gap-1.5 rounded-full border border-stone-300 bg-white px-3 py-2 text-stone-900 sm:gap-2 sm:px-4 sm:py-2.5";
   const initials = studio.name
     .split(/\s+/)
     .slice(0, 2)
@@ -44,17 +46,18 @@ export default async function PublicStudioPage({ params }: PageProps<"/s/[slug]"
 
   return (
     <main className="flex-1 bg-white pb-16">
-      <div className="mx-auto max-w-6xl px-4 pt-4 sm:pt-8">
+      <div className="mx-auto max-w-6xl px-4 pt-3 sm:pt-8">
         {/* Capa */}
         <section
-          className={`grid items-center gap-6 rounded-3xl bg-stone-100 p-4 sm:p-8 ${photos.length > 0 ? "md:grid-cols-2" : "md:grid-cols-[1fr_auto]"}`}
+          className={`grid items-center gap-4 rounded-3xl bg-stone-100 p-3 sm:gap-6 sm:p-8 ${photos.length > 0 ? "md:grid-cols-2" : "md:grid-cols-[1fr_auto]"}`}
         >
-          <div className="min-w-0 p-2 sm:p-2">
-            <h1 className="text-3xl font-bold tracking-tight text-stone-900 sm:text-4xl">{studio.name}</h1>
-            {location && <p className="mt-3 text-sm text-stone-600">{location}</p>}
-            <div className="mt-6 flex flex-wrap gap-2">
+          <div className="min-w-0 px-1 pb-1 sm:p-2">
+            <h1 className="text-2xl font-bold tracking-tight text-stone-900 sm:text-4xl">{studio.name}</h1>
+            {location && <p className="mt-1.5 text-sm text-stone-600 sm:mt-3">{location}</p>}
+            <div className="mt-4 flex flex-wrap gap-1.5 sm:mt-6 sm:gap-2">
               <ShareButton title={studio.name} color={color} />
-              <a href="#informacao" className="btn rounded-full border border-stone-300 bg-white text-stone-900">
+              <a href="#informacao" className={pill}>
+                <Info className="hidden h-4 w-4 sm:block" aria-hidden />
                 Informação
               </a>
               {studio.whatsapp && (
@@ -62,15 +65,19 @@ export default async function PublicStudioPage({ params }: PageProps<"/s/[slug]"
                   href={whatsappLink(studio.whatsapp, "Olá! Tenho uma dúvida.")}
                   target="_blank"
                   rel="noreferrer"
-                  className="btn rounded-full border border-stone-300 bg-white text-stone-900"
+                  className={pill}
                 >
+                  <MessageCircle className="h-4 w-4" aria-hidden />
                   WhatsApp
                 </a>
               )}
             </div>
           </div>
           {photos.length > 0 ? (
-            <PhotoGallery urls={photos.map(photoUrl)} name={studio.name} />
+            // No celular a foto vem primeiro, como capa, para o resto caber na tela.
+            <div className="-order-1 md:order-none">
+              <PhotoGallery urls={photos.map(photoUrl)} name={studio.name} />
+            </div>
           ) : studio.logo_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img

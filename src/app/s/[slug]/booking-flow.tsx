@@ -129,11 +129,15 @@ export function BookingFlow({ studio, today }: { studio: PublicStudio; today: st
                 <li key={s.id} className="flex items-center gap-4 py-5">
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-stone-900">{s.name}</p>
-                    <p className="mt-0.5 text-sm font-semibold text-stone-500">{formatDuration(s.duration_minutes)}</p>
+                    <p className="mt-0.5 text-sm font-semibold text-stone-500">
+                      {formatDuration(s.duration_minutes)}
+                      {/* No celular o valor fica aqui, para o nome do serviço ter espaço. */}
+                      {s.price_cents > 0 && <span className="text-stone-900 sm:hidden"> · {formatMoney(s.price_cents)}</span>}
+                    </p>
                     {s.description && <p className="mt-1 line-clamp-2 text-sm text-stone-600">{s.description}</p>}
                   </div>
                   {s.price_cents > 0 && (
-                    <p className="shrink-0 text-right">
+                    <p className="hidden shrink-0 text-right sm:block">
                       <span className="block text-xs text-stone-500">Valor</span>
                       <span className="font-semibold text-stone-900">{formatMoney(s.price_cents)}</span>
                     </p>
