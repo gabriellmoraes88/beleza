@@ -380,7 +380,7 @@ export default async function Home() {
 
       {/* Destaque escuro */}
       <section className="bg-stone-950 py-20 text-white sm:py-28">
-        <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 lg:grid-cols-2">
+        <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-12 px-4 lg:grid-cols-2 [&>*]:min-w-0">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-stone-400">Sem horário duplicado</p>
             <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-5xl">
