@@ -90,7 +90,7 @@ export interface PublicStudio {
   }[];
   photos?: string[];
   /** Equipe que recebe agendamentos online (ativa e com horário). */
-  professionals?: { id: string; name: string }[];
+  professionals?: { id: string; name: string; service_ids?: string[] | null }[];
 }
 
 export type ActionState = { ok?: boolean; error?: string; message?: string } | undefined;

@@ -63,3 +63,20 @@ export async function setProfessionalActive(formData: FormData) {
   await supabase.from("professionals").update({ active }).eq("id", id).eq("studio_id", studio.id);
   refresh();
 }
+
+export async function setProfessionalServices(_: ActionState, formData: FormData): Promise<ActionState> {
+  const { supabase, role } = await requireStudio();
+  if (role !== "owner") return { error: "Somente a proprietária gerencia a equipe." };
+  const id = z.string().uuid().safeParse(formData.get("id"));
+  const services = z.array(z.string().uuid()).safeParse(formData.getAll("service_id"));
+  if (!id.success || !services.success) return { error: "Dados inválidos." };
+  if (services.data.length === 0) return { error: "Marque pelo menos um serviço." };
+  // A função confere que a profissional e os serviços são deste studio.
+  const { error } = await supabase.rpc("set_professional_services", {
+    p_professional_id: id.data,
+    p_service_ids: services.data,
+  });
+  if (error) return { error: friendlyError(error) };
+  refresh();
+  return { message: "Serviços salvos." };
+}

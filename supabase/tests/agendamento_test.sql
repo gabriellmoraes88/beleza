@@ -293,6 +293,55 @@ select jsonb_array_length(public.get_public_studio('espaco-da-ana') -> 'professi
 reset role;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-00000000000a', false);
 
+-- Serviços por profissional: Júlia só faz Pedicure
+reset role;
+update public.professionals set active = true where id = :'prof2';
+set role authenticated;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-00000000000b', false);
+do $$ begin
+  begin
+    perform public.set_professional_services(current_setting('t.prof2')::uuid, array[current_setting('t.svc2')::uuid]);
+    raise exception 'Bia alterou serviços da equipe da Ana';
+  exception when others then
+    if sqlerrm <> 'FORBIDDEN' then raise; end if;
+  end;
+end $$;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-00000000000a', false);
+select public.set_professional_services(:'prof2', array[:'svc2']::uuid[]);
+select count(*) = 1 as servico_gravado from public.professional_services where professional_id = :'prof2';
+reset role;
+select set_config('request.jwt.claim.sub', '', false);
+set role anon;
+select jsonb_array_length((select p -> 'service_ids' from jsonb_array_elements(public.get_public_studio('espaco-da-ana') -> 'professionals') p
+        where p ->> 'id' = :'prof2')) = 1 as servicos_publicos;
+select count(*) = 0 as julia_sem_manicure
+from public.get_available_slots_multi('espaco-da-ana', array[:'svc']::uuid[], :'dia2', :'prof2');
+select count(*) > 0 as julia_com_pedicure
+from public.get_available_slots_multi('espaco-da-ana', array[:'svc2']::uuid[], :'dia2', :'prof2');
+select count(*) = 0 as julia_sem_combo
+from public.get_available_slots_multi('espaco-da-ana', array[:'svc', :'svc2']::uuid[], :'dia2', :'prof2');
+do $$ begin
+  begin
+    perform public.book_appointment_multi('espaco-da-ana', array[current_setting('t.svc')::uuid],
+      current_setting('t.slot_eq')::timestamptz, 'Bel', '5511911110004', null, current_setting('t.prof2')::uuid);
+    raise exception 'Júlia recebeu serviço que não faz';
+  exception when others then
+    if sqlerrm <> 'SLOT_UNAVAILABLE' then raise; end if;
+  end;
+end $$;
+-- "Qualquer um" para Manicure só pode cair com a outra profissional
+select token as tok_sv from public.book_appointment_multi('espaco-da-ana', array[:'svc']::uuid[], :'slot_eq', 'Bel', '5511911110004') \gset
+select public.get_public_appointment(:'tok_sv') ->> 'professional_name' <> 'Júlia' as qualquer_respeita_servico;
+select public.cancel_public_appointment(:'tok_sv') as cancelou_sv;
+-- Marcar todos os serviços volta a "faz todos"
+reset role;
+set role authenticated;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-00000000000a', false);
+select public.set_professional_services(:'prof2',
+  (select array_agg(id) from public.services where studio_id = :'ana_studio' and active));
+select count(*) = 0 as todos_vira_padrao from public.professional_services where professional_id = :'prof2';
+reset role;
+
 -- Assinatura expirada bloqueia escrita e agendamento público, sem apagar dados
 reset role;
 update public.subscriptions set trial_ends_at = now() - interval '1 day' where studio_id = :'ana_studio';
