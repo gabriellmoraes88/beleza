@@ -2,15 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { CalendarDays, Clock, CreditCard, House, Sparkles, Store, Users } from "lucide-react";
 
 const items = [
-  { href: "/painel", label: "Início", icon: "⌂" },
-  { href: "/painel/agenda", label: "Agenda", icon: "▦" },
-  { href: "/painel/servicos", label: "Serviços", icon: "✦" },
-  { href: "/painel/horarios", label: "Horários", icon: "◷" },
-  { href: "/painel/clientes", label: "Clientes", icon: "☺" },
-  { href: "/painel/configuracoes", label: "Studio", icon: "⚙" },
-  { href: "/painel/assinatura", label: "Assinatura", icon: "₢" },
+  { href: "/painel", label: "Início", Icon: House },
+  { href: "/painel/agenda", label: "Agenda", Icon: CalendarDays },
+  { href: "/painel/servicos", label: "Serviços", Icon: Sparkles },
+  { href: "/painel/horarios", label: "Horários", Icon: Clock },
+  { href: "/painel/clientes", label: "Clientes", Icon: Users },
+  { href: "/painel/configuracoes", label: "Studio", Icon: Store },
+  { href: "/painel/assinatura", label: "Assinatura", Icon: CreditCard },
 ];
 
 function isActive(pathname: string, href: string) {
@@ -29,9 +30,7 @@ export function SideNav() {
             isActive(pathname, item.href) ? "bg-brand-50 text-brand-700" : "text-stone-700 hover:bg-stone-100"
           }`}
         >
-          <span aria-hidden className="w-4 text-center">
-            {item.icon}
-          </span>
+          <item.Icon aria-hidden className="h-4.5 w-4.5" strokeWidth={1.9} />
           {item.label}
         </Link>
       ))}
@@ -51,13 +50,11 @@ export function BottomNav() {
         <Link
           key={item.href}
           href={item.href}
-          className={`flex flex-col items-center gap-0.5 py-2 text-xs font-medium ${
+          className={`flex flex-col items-center gap-1 pb-2 pt-2.5 text-xs font-medium ${
             isActive(pathname, item.href) ? "text-brand-700" : "text-stone-500"
           }`}
         >
-          <span aria-hidden className="text-lg leading-none">
-            {item.icon}
-          </span>
+          <item.Icon aria-hidden className="h-6.5 w-6.5" strokeWidth={isActive(pathname, item.href) ? 2.2 : 1.8} />
           {item.label}
         </Link>
       ))}
