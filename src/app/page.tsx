@@ -272,14 +272,12 @@ export default function Home() {
             </ul>
             <div className="mt-8 flex items-center justify-center gap-3 lg:justify-start">
               <div className="flex -space-x-2" aria-hidden>
-                {["AC", "JS", "MR", "LP"].map((ini, i) => (
+                {STUDIO_LOGOS.map((Logo, i) => (
                   <span
-                    key={ini}
-                    className={`flex h-9 w-9 items-center justify-center rounded-full border-2 border-white text-[11px] font-semibold text-white ${
-                      ["bg-stone-900", "bg-stone-700", "bg-stone-500", "bg-stone-400"][i]
-                    }`}
+                    key={i}
+                    className="block h-11 w-11 overflow-hidden rounded-full border-2 border-white shadow-sm"
                   >
-                    {ini}
+                    <Logo />
                   </span>
                 ))}
               </div>
@@ -479,3 +477,67 @@ export default function Home() {
     </main>
   );
 }
+
+/* Logos de studios fictícios, só ilustrativos. */
+const STUDIO_LOGOS = [
+  () => (
+    <svg viewBox="0 0 40 40" className="h-full w-full">
+      <rect width="40" height="40" fill="#1c1917" />
+      <circle cx="20" cy="20" r="13" fill="none" stroke="#d6c7a1" strokeWidth="0.8" />
+      <text x="20" y="25.5" textAnchor="middle" fontFamily="Georgia, serif" fontSize="15" fill="#d6c7a1">
+        A
+      </text>
+    </svg>
+  ),
+  () => (
+    <svg viewBox="0 0 40 40" className="h-full w-full">
+      <rect width="40" height="40" fill="#e7e0d6" />
+      <path d="M20 9c3 4 3 8 0 11-3-3-3-7 0-11Z" fill="#7c6a55" />
+      <path d="M20 20c4-2 8-1 10 2-4 2-8 1-10-2ZM20 20c-4-2-8-1-10 2 4 2 8 1 10-2Z" fill="#a8957c" />
+      <text x="20" y="33" textAnchor="middle" fontFamily="Arial, sans-serif" fontSize="5" letterSpacing="1" fill="#57483a">
+        LUME
+      </text>
+    </svg>
+  ),
+  () => (
+    <svg viewBox="0 0 40 40" className="h-full w-full">
+      <rect width="40" height="40" fill="#44403c" />
+      <text x="20" y="26" textAnchor="middle" fontFamily="Georgia, serif" fontStyle="italic" fontSize="16" fill="#fafaf9">
+        Íris
+      </text>
+    </svg>
+  ),
+  () => (
+    <svg viewBox="0 0 40 40" className="h-full w-full">
+      <rect width="40" height="40" fill="#f5f5f4" />
+      <path d="M14 12l12 14M26 12L14 26" stroke="#292524" strokeWidth="1.6" strokeLinecap="round" />
+      <circle cx="13" cy="11" r="2.4" fill="none" stroke="#292524" strokeWidth="1.4" />
+      <circle cx="27" cy="11" r="2.4" fill="none" stroke="#292524" strokeWidth="1.4" />
+      <text x="20" y="35" textAnchor="middle" fontFamily="Arial, sans-serif" fontWeight="700" fontSize="4.6" letterSpacing="0.8" fill="#292524">
+        BARBA
+      </text>
+    </svg>
+  ),
+  () => (
+    <svg viewBox="0 0 40 40" className="h-full w-full">
+      <rect width="40" height="40" fill="#c2a878" />
+      <circle cx="20" cy="18" r="5" fill="#fffbeb" />
+      {[0, 45, 90, 135, 180, 225, 270, 315].map((a) => (
+        <line
+          key={a}
+          x1="20"
+          y1="9.5"
+          x2="20"
+          y2="7"
+          stroke="#fffbeb"
+          strokeWidth="1.2"
+          strokeLinecap="round"
+          transform={`rotate(${a} 20 18)`}
+        />
+      ))}
+      <text x="20" y="34" textAnchor="middle" fontFamily="Arial, sans-serif" fontSize="4.8" letterSpacing="1" fill="#fffbeb">
+        SOL
+      </text>
+    </svg>
+  ),
+];
