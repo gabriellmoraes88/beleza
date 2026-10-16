@@ -52,6 +52,7 @@ export interface Appointment {
   customer_note: string | null;
   internal_note: string | null;
   customers?: { id: string; name: string; phone: string } | null;
+  professionals?: { name: string } | null;
 }
 
 export interface Subscription {
@@ -88,6 +89,8 @@ export interface PublicStudio {
     price_cents: number;
   }[];
   photos?: string[];
+  /** Equipe que recebe agendamentos online (ativa e com horário). */
+  professionals?: { id: string; name: string }[];
 }
 
 export type ActionState = { ok?: boolean; error?: string; message?: string } | undefined;

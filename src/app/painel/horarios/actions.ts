@@ -9,8 +9,24 @@ import type { ActionState } from "@/lib/types";
 
 const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
 
+/** Profissional do formulário, conferindo que é deste studio. Sem valor: a primeira ativa. */
+async function pickProfessional(formData: FormData) {
+  const { supabase, studio, professional } = await requireStudio();
+  const raw = String(formData.get("professional_id") ?? "");
+  if (!raw) return professional;
+  if (!z.string().uuid().safeParse(raw).success) return null;
+  const { data } = await supabase
+    .from("professionals")
+    .select("id, name")
+    .eq("id", raw)
+    .eq("studio_id", studio.id)
+    .maybeSingle();
+  return data;
+}
+
 export async function saveWorkingHours(_: ActionState, formData: FormData): Promise<ActionState> {
-  const { supabase, professional } = await requireStudio();
+  const { supabase } = await requireStudio();
+  const professional = await pickProfessional(formData);
   if (!professional) return { error: "Nenhum profissional ativo encontrado." };
 
   const hours: { weekday: number; start: string; end: string }[] = [];
@@ -49,6 +65,9 @@ export async function createBlock(_: ActionState, formData: FormData): Promise<A
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   const { start_date, reason } = parsed.data;
   const end_date = isValidDateStr(parsed.data.end_date) ? parsed.data.end_date : start_date;
+  // Vazio = studio inteiro.
+  const professionalId = formData.get("professional_id") ? (await pickProfessional(formData))?.id : null;
+  if (professionalId === undefined) return { error: "Profissional inválida." };
   const allDay = formData.get("all_day") === "on";
   const tz = studio.timezone;
 
@@ -68,6 +87,7 @@ export async function createBlock(_: ActionState, formData: FormData): Promise<A
 
   const { error } = await supabase.from("time_blocks").insert({
     studio_id: studio.id,
+    professional_id: professionalId,
     starts_at: startsAt.toISOString(),
     ends_at: endsAt.toISOString(),
     reason: reason || null,
@@ -76,13 +96,15 @@ export async function createBlock(_: ActionState, formData: FormData): Promise<A
   if (error) return { error: friendlyError(error) };
 
   // Avisa se já existem agendamentos no período bloqueado (eles não são cancelados automaticamente).
-  const { count } = await supabase
+  let overlap = supabase
     .from("appointments")
     .select("id", { count: "exact", head: true })
     .eq("studio_id", studio.id)
     .in("status", ["pending", "confirmed"])
     .lt("starts_at", endsAt.toISOString())
     .gt("ends_at", startsAt.toISOString());
+  if (professionalId) overlap = overlap.eq("professional_id", professionalId);
+  const { count } = await overlap;
 
   revalidatePath("/painel/horarios");
   revalidatePath("/painel/agenda");

@@ -87,6 +87,7 @@ export async function createManualAppointment(_: ActionState, formData: FormData
   if (!isValidDateStr(date) || !TIME.test(time)) return { error: "Informe data e horário." };
   if (name.length < 2) return { error: "Informe o nome da cliente." };
   if (!phone) return { error: "Informe um telefone válido com DDD." };
+  const professional = z.string().uuid().safeParse(formData.get("professional_id"));
 
   const { error } = await supabase.rpc("create_manual_appointment", {
     p_studio_id: studio.id,
@@ -95,6 +96,8 @@ export async function createManualAppointment(_: ActionState, formData: FormData
     p_customer_name: name,
     p_customer_phone: phone,
     p_internal_note: String(formData.get("internal_note") ?? "") || null,
+    // A função confere que a profissional é deste studio.
+    p_professional_id: professional.success ? professional.data : null,
   });
   if (error) return { error: friendlyError(error) };
   refresh();

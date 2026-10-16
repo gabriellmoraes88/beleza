@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, Clock, CreditCard, House, Sparkles, Store, Users } from "lucide-react";
+import { CalendarDays, Clock, Contact, CreditCard, House, Sparkles, Store, Users } from "lucide-react";
 
 const items = [
   { href: "/painel", label: "Início", Icon: House },
   { href: "/painel/agenda", label: "Agenda", Icon: CalendarDays },
   { href: "/painel/servicos", label: "Serviços", Icon: Sparkles },
   { href: "/painel/horarios", label: "Horários", Icon: Clock },
+  { href: "/painel/equipe", label: "Equipe", Icon: Contact },
   { href: "/painel/clientes", label: "Clientes", Icon: Users },
   { href: "/painel/configuracoes", label: "Studio", Icon: Store },
   { href: "/painel/assinatura", label: "Assinatura", Icon: CreditCard },

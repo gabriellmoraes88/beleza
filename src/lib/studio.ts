@@ -64,3 +64,18 @@ export async function requireStudio() {
   if (!ctx.studio) redirect("/painel/configurar");
   return ctx;
 }
+
+export type TeamMember = { id: string; name: string; active: boolean };
+
+/** Equipe do studio (ativas primeiro, na ordem do studio). */
+export const getTeam = cache(async (): Promise<TeamMember[]> => {
+  const { supabase, studio } = await requireStudio();
+  const { data } = await supabase
+    .from("professionals")
+    .select("id, name, active")
+    .eq("studio_id", studio.id)
+    .order("active", { ascending: false })
+    .order("sort_order")
+    .order("created_at");
+  return (data ?? []) as TeamMember[];
+});

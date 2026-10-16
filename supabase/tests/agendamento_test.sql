@@ -226,6 +226,73 @@ do $$ begin
 end $$;
 select count(*) as clientes, sum(total_appointments) as total from public.customer_stats;
 
+-- Equipe: segunda profissional, escolha de profissional e "qualquer um"
+reset role;
+set role authenticated;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-00000000000b', false);
+do $$ begin
+  begin
+    perform public.add_professional(current_setting('t.ana')::uuid, 'Intrusa');
+    raise exception 'Bia adicionou profissional no studio da Ana';
+  exception when others then
+    if sqlerrm <> 'FORBIDDEN' then raise; end if;
+  end;
+end $$;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-00000000000a', false);
+select public.add_professional(:'ana_studio', 'Júlia') as prof2 \gset
+select (select count(*) from public.working_hours where professional_id = :'prof2')
+     = (select count(*) from public.working_hours wh join public.professionals p on p.id = wh.professional_id
+        where p.studio_id = :'ana_studio' and p.id <> :'prof2') as horario_copiado;
+select id as prof1 from public.professionals where studio_id = :'ana_studio' and id <> :'prof2' \gset
+reset role;
+select set_config('request.jwt.claim.sub', '', false);
+set role anon;
+select jsonb_array_length(public.get_public_studio('espaco-da-ana') -> 'professionals') = 2 as equipe_publica;
+select ((now() at time zone 'America/Sao_Paulo')::date + 2) as dia2 \gset
+select s as slot_eq from public.get_available_slots_multi('espaco-da-ana', array[:'svc']::uuid[], :'dia2') s limit 1 \gset
+-- Duas clientes no mesmo horário com "qualquer um": cada uma fica com uma profissional
+select token as tok_eq1 from public.book_appointment_multi('espaco-da-ana', array[:'svc']::uuid[], :'slot_eq', 'Lia', '5511911110001') \gset
+select token as tok_eq2 from public.book_appointment_multi('espaco-da-ana', array[:'svc']::uuid[], :'slot_eq', 'Rui', '5511911110002') \gset
+select (public.get_public_appointment(:'tok_eq1') ->> 'professional_name')
+    <> (public.get_public_appointment(:'tok_eq2') ->> 'professional_name') as qualquer_um_divide;
+select count(*) = 0 as horario_sumiu
+from public.get_available_slots_multi('espaco-da-ana', array[:'svc']::uuid[], :'dia2') s where s = :'slot_eq';
+select set_config('t.slot_eq', :'slot_eq', false), set_config('t.prof2', :'prof2', false);
+do $$ begin
+  begin
+    perform public.book_appointment_multi('espaco-da-ana', array[current_setting('t.svc')::uuid],
+      current_setting('t.slot_eq')::timestamptz, 'Sol', '5511911110003');
+    raise exception 'terceira cliente aceita com a equipe toda ocupada';
+  exception when others then
+    if sqlerrm <> 'SLOT_UNAVAILABLE' then raise; end if;
+  end;
+  begin
+    perform public.book_appointment_multi('espaco-da-ana', array[current_setting('t.svc')::uuid],
+      current_setting('t.slot_eq')::timestamptz + interval '3 hours', 'Sol', '5511911110003', null,
+      '00000000-0000-0000-0000-0000000000ff');
+    raise exception 'profissional de fora aceito';
+  exception when others then
+    if sqlerrm <> 'SLOT_UNAVAILABLE' then raise; end if;
+  end;
+end $$;
+-- Escolhendo a profissional, o agendamento fica com ela
+select token as tok_eq3 from public.book_appointment_multi('espaco-da-ana', array[:'svc']::uuid[],
+  (:'slot_eq'::timestamptz + interval '4 hours'), 'Sol', '5511911110003', null, :'prof2') \gset
+select public.get_public_appointment(:'tok_eq3') ->> 'professional_name' = 'Júlia' as escolha_respeitada;
+-- Horários da Júlia não mostram o que só a outra profissional tem livre e vice-versa
+select count(*) = 0 as filtro_profissional
+from public.get_available_slots_multi('espaco-da-ana', array[:'svc']::uuid[], :'dia2', :'prof2') s
+where s = :'slot_eq'::timestamptz + interval '4 hours';
+select public.cancel_public_appointment(:'tok_eq1') and public.cancel_public_appointment(:'tok_eq2')
+   and public.cancel_public_appointment(:'tok_eq3') as cancelou_equipe;
+-- Profissional desativada some da página pública
+reset role;
+update public.professionals set active = false where id = :'prof2';
+set role anon;
+select jsonb_array_length(public.get_public_studio('espaco-da-ana') -> 'professionals') = 1 as inativa_some;
+reset role;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-00000000000a', false);
+
 -- Assinatura expirada bloqueia escrita e agendamento público, sem apagar dados
 reset role;
 update public.subscriptions set trial_ends_at = now() - interval '1 day' where studio_id = :'ana_studio';
