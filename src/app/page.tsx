@@ -219,7 +219,7 @@ export default function Home() {
               Agenda online para studios de beleza
             </span>
             <h1 className="mt-6 text-5xl font-bold leading-[1.02] tracking-tight text-stone-900 sm:text-6xl lg:text-7xl">
-              Pare de agendar pelo WhatsApp.
+              Pare de agendar pelo <span className="text-[#25D366]">WhatsApp</span>.
             </h1>
             <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-stone-600 lg:mx-0">
               Agenda online para manicures, nail designers, cabeleireiras e esteticistas. Sua cliente escolhe o serviço, o
