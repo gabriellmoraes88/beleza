@@ -1,4 +1,33 @@
 import Link from "next/link";
+import {
+  Activity,
+  Brush,
+  Eye,
+  Flower2,
+  Footprints,
+  Hand,
+  HandHeart,
+  Leaf,
+  Palette,
+  PenTool,
+  Scissors,
+  Sparkles,
+} from "lucide-react";
+
+const categories = [
+  { label: "Cabeleireiro", Icon: Scissors },
+  { label: "Barbearia", Icon: Brush },
+  { label: "Manicure", Icon: Hand },
+  { label: "Sobrancelhas e cílios", Icon: Eye },
+  { label: "Maquiagem", Icon: Palette },
+  { label: "Estética", Icon: Sparkles },
+  { label: "Massagem", Icon: HandHeart },
+  { label: "Spa", Icon: Flower2 },
+  { label: "Depilação", Icon: Leaf },
+  { label: "Podologia", Icon: Footprints },
+  { label: "Pilates", Icon: Activity },
+  { label: "Tatuagem", Icon: PenTool },
+];
 
 const features = [
   {
@@ -261,6 +290,24 @@ export default function Home() {
             </div>
           </div>
           <PhoneMockup />
+        </div>
+      </section>
+
+      {/* Categorias */}
+      <section className="border-t border-stone-100 py-12">
+        <div className="mx-auto max-w-6xl px-4">
+          <p className="text-center text-sm text-stone-500">Feito para quem atende com hora marcada</p>
+          <ul className="-mx-4 mt-6 flex snap-x gap-2 overflow-x-auto px-4 pb-2 [scrollbar-width:none] lg:mx-0 lg:grid lg:grid-cols-12 lg:overflow-visible lg:px-0">
+            {categories.map(({ label, Icon: CategoryIcon }) => (
+              <li
+                key={label}
+                className="flex w-24 shrink-0 snap-start flex-col items-center gap-2 rounded-2xl px-1 py-3 text-center transition hover:bg-stone-50 lg:w-auto"
+              >
+                <CategoryIcon className="h-9 w-9 text-stone-700" strokeWidth={1.2} aria-hidden />
+                <span className="text-[13px] leading-tight text-stone-600">{label}</span>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 
