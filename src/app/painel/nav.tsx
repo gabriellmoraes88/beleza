@@ -51,7 +51,7 @@ export function BottomNav() {
         <Link
           key={item.href}
           href={item.href}
-          className={`flex flex-col items-center gap-0.5 py-2 text-[11px] font-medium ${
+          className={`flex flex-col items-center gap-0.5 py-2 text-xs font-medium ${
             isActive(pathname, item.href) ? "text-brand-700" : "text-stone-500"
           }`}
         >
