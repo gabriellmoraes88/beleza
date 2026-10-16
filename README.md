@@ -1,6 +1,6 @@
-# Beleza
+# Bellink
 
-Plataforma SaaS de agendamento online para manicures, nail designers, cabeleireiras, esteticistas e pequenos studios.
+Plataforma SaaS de agendamento online para manicures, nail designers, cabeleireiras, esteticistas e pequenos studios. Slogan: "Sua agenda no link da bio."
 
 Cada studio tem um link público (`/s/espaco-da-ana`) onde a cliente agenda sem criar conta. A profissional gerencia agenda, serviços, horários, clientes e assinatura num painel. A cobrança recorrente é feita pelo Asaas.
 
@@ -44,7 +44,7 @@ Cada studio tem um link público (`/s/espaco-da-ana`) onde a cliente agenda sem 
 ### 1. Supabase
 
 1. Crie um projeto em [supabase.com](https://supabase.com) (sugestão: um projeto para produção e outro para testes/preview).
-2. Aplique a migração. Pelo painel: **SQL Editor** → cole o conteúdo de `supabase/migrations/20261016000000_schema_inicial.sql` → Run. Ou pela CLI:
+2. Aplique as migrações, na ordem do nome do arquivo. Pelo painel: **SQL Editor** → cole o conteúdo de cada arquivo de `supabase/migrations/` → Run. A segunda migração também cria o bucket público `studio-photos` do Storage, usado pelas fotos do studio. Ou pela CLI:
    ```bash
    npx supabase link --project-ref SEU_PROJECT_REF
    npx supabase db push
@@ -96,6 +96,7 @@ Os testes SQL rodam num Postgres 15+ comum, simulando o ambiente do Supabase:
 createdb beleza_test
 psql -d beleza_test -f supabase/tests/stub_supabase.sql \
                     -f supabase/migrations/20261016000000_schema_inicial.sql \
+                    -f supabase/migrations/20261016010000_bellink_fotos_e_servicos.sql \
                     -f supabase/tests/agendamento_test.sql
 ```
 
@@ -103,7 +104,6 @@ A última linha deve ser `TODOS OS TESTES PASSARAM`.
 
 ## Próximos passos sugeridos
 
-- Upload de logotipo (Supabase Storage).
 - Lembretes por WhatsApp/e-mail (integração separada, com consentimento).
 - Equipe com vários profissionais (o modelo já suporta `professionals`; falta a escolha na página pública e serviços por profissional).
 - Proteção extra contra abuso na página pública (captcha ou limite por IP).

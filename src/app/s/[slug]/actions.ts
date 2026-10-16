@@ -6,12 +6,14 @@ import { normalizePhone } from "@/lib/phone";
 import { friendlyError } from "@/lib/errors";
 import { isValidDateStr } from "@/lib/time";
 
-export async function fetchSlots(slug: string, serviceId: string, date: string): Promise<string[]> {
-  if (!isValidDateStr(date) || !z.string().uuid().safeParse(serviceId).success) return [];
+const serviceIdsSchema = z.array(z.string().uuid()).min(1).max(5);
+
+export async function fetchSlots(slug: string, serviceIds: string[], date: string): Promise<string[]> {
+  if (!isValidDateStr(date) || !serviceIdsSchema.safeParse(serviceIds).success) return [];
   const supabase = createPublicClient();
-  const { data, error } = await supabase.rpc("get_available_slots", {
+  const { data, error } = await supabase.rpc("get_available_slots_multi", {
     p_slug: slug,
-    p_service_id: serviceId,
+    p_service_ids: serviceIds,
     p_date: date,
   });
   if (error || !data) return [];
@@ -20,7 +22,7 @@ export async function fetchSlots(slug: string, serviceId: string, date: string):
 
 const bookingSchema = z.object({
   slug: z.string().min(3).max(40),
-  serviceId: z.string().uuid(),
+  serviceIds: serviceIdsSchema,
   startsAt: z.string().datetime({ offset: true }),
   name: z.string().trim().min(2, "Informe seu nome.").max(80),
   phone: z.string().trim().min(8, "Informe seu telefone com DDD."),
@@ -38,9 +40,9 @@ export async function bookAppointment(input: z.input<typeof bookingSchema>): Pro
 
   const supabase = createPublicClient();
   const { data, error } = await supabase
-    .rpc("book_appointment", {
+    .rpc("book_appointment_multi", {
       p_slug: parsed.data.slug,
-      p_service_id: parsed.data.serviceId,
+      p_service_ids: parsed.data.serviceIds,
       p_starts_at: parsed.data.startsAt,
       p_customer_name: parsed.data.name,
       p_customer_phone: phone,

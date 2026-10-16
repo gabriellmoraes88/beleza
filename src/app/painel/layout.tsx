@@ -11,7 +11,7 @@ export default async function PainelLayout({ children }: LayoutProps<"/painel">)
     return (
       <div className="flex-1">
         <header className="flex items-center justify-between px-4 py-4">
-          <span className="text-lg font-semibold text-brand-700">Beleza</span>
+          <span className="text-lg font-semibold text-brand-700">Bellink</span>
           <form action={signOut}>
             <button className="btn-ghost">Sair</button>
           </form>

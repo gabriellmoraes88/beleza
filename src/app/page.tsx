@@ -11,7 +11,7 @@ export default function Home() {
   return (
     <main className="flex-1">
       <header className="mx-auto flex max-w-5xl items-center justify-between px-4 py-5">
-        <span className="text-xl font-semibold text-brand-700">Beleza</span>
+        <span className="text-xl font-semibold text-brand-700">Bellink</span>
         <nav className="flex gap-2">
           <Link href="/entrar" className="btn-ghost">
             Entrar

@@ -12,6 +12,8 @@ select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-00000000000a
 select public.create_studio('Espaço da Ana', 'espaco-da-ana', 'Ana', '5511999990000') as ana_studio \gset
 insert into public.services (studio_id, name, duration_minutes, price_cents)
 values (:'ana_studio', 'Manicure tradicional', 45, 3500) returning id as svc \gset
+insert into public.services (studio_id, name, duration_minutes, price_cents)
+values (:'ana_studio', 'Pedicure', 30, 2000) returning id as svc2 \gset
 
 -- Abre todos os dias 09-12 / 13-19 para o teste não depender do dia da semana
 select public.set_working_hours(
@@ -67,6 +69,26 @@ do $$ begin
   exception when insufficient_privilege then null;
   end;
 end $$;
+
+-- Fotos: Bia não grava foto no studio da Ana nem na pasta de outro studio
+select set_config('t.ana', :'ana_studio', false), set_config('t.bia', :'bia_studio', false);
+do $$ begin
+  begin
+    insert into public.studio_photos (studio_id, path)
+    values (current_setting('t.ana')::uuid, current_setting('t.ana') || '/00000000-0000-0000-0000-000000000001.jpg');
+    raise exception 'RLS: Bia gravou foto em outro studio';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    insert into public.studio_photos (studio_id, path)
+    values (current_setting('t.bia')::uuid, current_setting('t.ana') || '/00000000-0000-0000-0000-000000000002.jpg');
+    raise exception 'RLS: Bia gravou foto na pasta de outro studio';
+  exception when insufficient_privilege then null;
+  end;
+end $$;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-00000000000a', false);
+insert into public.studio_photos (studio_id, path)
+values (:'ana_studio', :'ana_studio' || '/00000000-0000-0000-0000-000000000003.jpg');
 
 -- Cliente anônimo
 reset role;
@@ -137,6 +159,51 @@ select count(*) as slots_depois from public.get_available_slots('espaco-da-ana',
 select (public.get_public_appointment(:'tok') ->> 'status') as status_publico;
 select public.cancel_public_appointment(:'tok') as cancelou;
 select count(*) = :slots_antes as slots_voltaram from public.get_available_slots('espaco-da-ana', :'svc', :'dia');
+
+-- Fotos aparecem na página pública e anon não lê a tabela
+select jsonb_array_length(public.get_public_studio('espaco-da-ana') -> 'photos') = 1 as fotos_publicas;
+do $$ begin
+  begin
+    perform 1 from public.studio_photos;
+    raise exception 'anon leu studio_photos';
+  exception when insufficient_privilege then null;
+  end;
+end $$;
+
+-- Vários serviços: duração e valor somados, sem sobreposição
+select s as slot_multi from public.get_available_slots_multi('espaco-da-ana', array[:'svc', :'svc2']::uuid[], :'dia') s limit 1 \gset
+select token as tok_multi from public.book_appointment_multi('espaco-da-ana', array[:'svc', :'svc2']::uuid[], :'slot_multi', 'Rita Lima', '5511933332222') \gset
+select public.get_public_appointment(:'tok_multi') as ag_multi \gset
+select set_config('t.ag', :'ag_multi', false);
+do $$
+declare a jsonb := current_setting('t.ag')::jsonb;
+begin
+  if (a ->> 'ends_at')::timestamptz - (a ->> 'starts_at')::timestamptz <> interval '75 minutes' then
+    raise exception 'duração somada errada: %', a;
+  end if;
+  if (a ->> 'price_cents')::int <> 5500 or a ->> 'service_name' <> 'Manicure tradicional + Pedicure' then
+    raise exception 'valor/nome somados errados: %', a;
+  end if;
+end $$;
+select set_config('t.slot_multi', :'slot_multi', false), set_config('t.svc2', :'svc2', false);
+do $$ begin
+  -- 60 min depois do início ainda está dentro dos 75 min: deve falhar
+  begin
+    perform public.book_appointment('espaco-da-ana', current_setting('t.svc2')::uuid,
+      current_setting('t.slot_multi')::timestamptz + interval '60 minutes', 'João', '5511966665555');
+    raise exception 'sobreposição com agendamento de vários serviços aceita';
+  exception when others then
+    if sqlerrm <> 'SLOT_UNAVAILABLE' then raise; end if;
+  end;
+  begin
+    perform public.book_appointment_multi('espaco-da-ana', array[current_setting('t.svc2')::uuid, current_setting('t.svc2')::uuid],
+      current_setting('t.slot_multi')::timestamptz + interval '3 hours', 'João', '5511966665555');
+    raise exception 'serviço repetido aceito';
+  exception when others then
+    if sqlerrm <> 'SERVICE_NOT_FOUND' then raise; end if;
+  end;
+end $$;
+select public.cancel_public_appointment(:'tok_multi') as cancelou_multi;
 
 -- Painel: bloqueio remove horários e manual não sobrepõe
 reset role;

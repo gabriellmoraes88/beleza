@@ -6,7 +6,7 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: { default: "Beleza · Agendamento online para studios", template: "%s · Beleza" },
+  title: { default: "Bellink · Agendamento online para studios", template: "%s · Bellink" },
   description:
     "Agenda online para manicures, nail designers, cabeleireiras e esteticistas. Seu cliente agenda sozinho pelo link.",
 };
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#db2777",
+  themeColor: "#fafaf9",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
