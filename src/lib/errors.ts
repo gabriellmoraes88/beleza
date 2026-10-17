@@ -1,6 +1,7 @@
 // Traduz os códigos lançados pelas funções do banco em mensagens claras.
 const MESSAGES: Record<string, string> = {
   SLOT_UNAVAILABLE: "Esse horário acabou de ficar indisponível. Escolha outro horário, por favor.",
+  CANNOT_CHANGE: "Este agendamento não pode mais ser alterado pelo link. Fale com o studio.",
   STUDIO_UNAVAILABLE: "O agendamento online deste studio está temporariamente indisponível.",
   STUDIO_NOT_FOUND: "Studio não encontrado.",
   SERVICE_NOT_FOUND: "Serviço não encontrado ou indisponível.",
