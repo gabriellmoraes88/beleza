@@ -46,7 +46,7 @@ export default async function CustomerPage({ params }: PageProps<"/painel/client
           </a>
         }
       />
-      <div className="grid gap-5 lg:grid-cols-[1fr_340px]">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_340px]">
         <div>
           <div className="mb-3 grid grid-cols-3 gap-2 text-center">
             <div className="card py-3">

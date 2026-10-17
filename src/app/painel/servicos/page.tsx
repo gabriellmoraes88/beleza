@@ -35,7 +35,7 @@ export default async function ServicesPage({ searchParams }: PageProps<"/painel/
           </Alert>
         </div>
       )}
-      <div className="grid gap-5 lg:grid-cols-[1fr_360px]">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_360px]">
         <div className="space-y-3">
           {services.length === 0 ? (
             <EmptyState title="Nenhum serviço cadastrado">Cadastre o primeiro serviço ao lado.</EmptyState>
