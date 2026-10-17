@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { MessageCircle } from "lucide-react";
+import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { createPublicClient } from "@/lib/supabase/public";
 import { formatMoney } from "@/lib/format";
@@ -50,7 +52,26 @@ export default async function AppointmentPage({ params, searchParams }: PageProp
   const color = appt.primary_color;
   const when = `${formatDateLong(appt.starts_at, tz)} às ${formatTime(appt.starts_at, tz)}`;
   const isNew = novo === "1";
-  const message = `Olá! Sou ${appt.customer_first_name} e agendei ${appt.service_name} para ${when}.`;
+  const situation =
+    appt.status === "pending" ? "Aguardando confirmação" : appt.status === "canceled" ? "Cancelado" : "Confirmado";
+  // Endereço por onde a cliente abriu a página, para o link do comprovante funcionar no domínio certo.
+  const h = await headers();
+  const link = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}/agendamento/${token}`;
+  // Comprovante que a cliente manda para o studio pelo WhatsApp, já com o link do agendamento.
+  const message = [
+    `*Comprovante de agendamento · ${appt.studio_name}*`,
+    "",
+    `Cliente: ${appt.customer_first_name}`,
+    `Serviço: ${appt.service_name}`,
+    appt.professional_name ? `Com: ${appt.professional_name}` : null,
+    `Quando: ${when}`,
+    appt.price_cents > 0 ? `Valor: ${formatMoney(appt.price_cents)}` : null,
+    `Situação: ${situation}`,
+    "",
+    `Para ver ou cancelar: ${link}`,
+  ]
+    .filter((line) => line !== null)
+    .join("\n");
 
   return (
     <main className="mx-auto w-full max-w-lg flex-1 px-4 py-10">
@@ -117,13 +138,27 @@ export default async function AppointmentPage({ params, searchParams }: PageProp
         </dl>
 
         <div className="mt-5 flex flex-col gap-2">
-          {appt.studio_whatsapp && (
+          {appt.studio_whatsapp && appt.status !== "canceled" && (
+            <>
+              <a
+                href={whatsappLink(appt.studio_whatsapp, message)}
+                target="_blank"
+                rel="noreferrer"
+                className="btn py-3 text-white"
+                style={{ backgroundColor: color }}
+              >
+                <MessageCircle className="h-5 w-5" aria-hidden />
+                Enviar comprovante para o studio
+              </a>
+              <p className="text-xs text-stone-500">Abre o WhatsApp com os dados do agendamento prontos para enviar.</p>
+            </>
+          )}
+          {appt.studio_whatsapp && appt.status === "canceled" && (
             <a
-              href={whatsappLink(appt.studio_whatsapp, message)}
+              href={whatsappLink(appt.studio_whatsapp)}
               target="_blank"
               rel="noreferrer"
-              className="btn py-3 text-white"
-              style={{ backgroundColor: color }}
+              className="btn-secondary py-3"
             >
               Falar com o studio no WhatsApp
             </a>
