@@ -27,14 +27,14 @@ export async function generateMetadata({ params }: PageProps<"/s/[slug]">): Prom
   return {
     title,
     description,
-    // Ao compartilhar o link do studio, a prévia mostra o nome e a primeira foto dele.
+    // Ao compartilhar o link do studio, a prévia mostra o nome e a primeira foto dele (sem foto, a imagem do Bellink).
     openGraph: {
       siteName: "Bellink",
       title,
       description,
       locale: "pt_BR",
       type: "website",
-      ...(photo ? { images: [photoUrl(photo)] } : {}),
+      images: photo ? [photoUrl(photo)] : [{ url: "/opengraph-image", width: 1200, height: 630, alt: "Bellink" }],
     },
   };
 }
