@@ -3,25 +3,23 @@ import Link from "next/link";
 import { requireStudio } from "@/lib/studio";
 import { SITE_URL } from "@/lib/env";
 import type { Appointment } from "@/lib/types";
-import { bookedName, formatMoney } from "@/lib/format";
+import { bookedName } from "@/lib/format";
 import { addDays, dayRangeUtc, formatDateLong, formatTime, startOfWeek, todayIn } from "@/lib/time";
 import { EmptyState, StatusBadge } from "@/components/ui";
 import { ShareLink } from "@/components/share-link";
+import { ForecastCard } from "./forecast-card";
 import { InstallApp } from "./install-app";
 import { PushToggle } from "./push-toggle";
 
 export const metadata: Metadata = { title: "Início" };
 
-export default async function DashboardPage({ searchParams }: PageProps<"/painel">) {
+export default async function DashboardPage() {
   const { supabase, studio } = await requireStudio();
   const tz = studio.timezone;
   const today = todayIn(tz);
   const [dayStart, dayEnd] = dayRangeUtc(today, tz);
-  const week = (await searchParams).previsto === "semana";
   const weekStart = startOfWeek(today);
-  const [forecastStart, forecastEnd] = week
-    ? [dayRangeUtc(weekStart, tz)[0], dayRangeUtc(addDays(weekStart, 6), tz)[1]]
-    : [dayStart, dayEnd];
+  const [forecastStart, forecastEnd] = [dayRangeUtc(weekStart, tz)[0], dayRangeUtc(addDays(weekStart, 6), tz)[1]];
 
   const [{ data: todayData }, { data: upcomingData }, { data: services }, { count: hoursCount }, { data: forecastData }] = await Promise.all([
     supabase
@@ -44,14 +42,18 @@ export default async function DashboardPage({ searchParams }: PageProps<"/painel
     // Previsto: tudo que não foi cancelado nem marcado como falta.
     supabase
       .from("appointments")
-      .select("price_cents")
+      .select("starts_at, price_cents")
       .eq("studio_id", studio.id)
       .in("status", ["pending", "confirmed", "completed"])
       .gte("starts_at", forecastStart.toISOString())
       .lt("starts_at", forecastEnd.toISOString()),
   ]);
-  const forecast = forecastData ?? [];
-  const forecastCents = forecast.reduce((sum, a) => sum + a.price_cents, 0);
+  const weekAppts = forecastData ?? [];
+  const dayAppts = weekAppts.filter((a) => {
+    const t = Date.parse(a.starts_at);
+    return t >= dayStart.getTime() && t < dayEnd.getTime();
+  });
+  const sum = (list: { price_cents: number }[]) => ({ cents: list.reduce((s, a) => s + a.price_cents, 0), count: list.length });
 
   const todayAppts = (todayData ?? []) as Appointment[];
   const upcoming = (upcomingData ?? []) as Appointment[];
@@ -114,40 +116,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/painel
         </div>
       )}
 
-      <div className="card mb-5">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-semibold">Previsto</h2>
-          <div className="flex rounded-full bg-stone-100 p-1 text-sm" role="tablist">
-            {[
-              { label: "Hoje", href: "/painel", on: !week },
-              { label: "Esta semana", href: "/painel?previsto=semana", on: week },
-            ].map((t) => (
-              <Link
-                key={t.label}
-                href={t.href}
-                scroll={false}
-                role="tab"
-                aria-selected={t.on}
-                className={`rounded-full px-3 py-1 font-medium ${t.on ? "bg-white shadow-sm" : "text-stone-600"}`}
-              >
-                {t.label}
-              </Link>
-            ))}
-          </div>
-        </div>
-        <p className="mt-3 text-3xl font-semibold tracking-tight">{formatMoney(forecastCents)}</p>
-        <p className="text-sm text-stone-600">
-          {forecast.length === 1 ? "1 atendimento" : `${forecast.length} atendimentos`}{" "}
-          {week ? "de domingo a sábado" : "hoje"}
-          {" · "}
-          <Link
-            href={week ? `/painel/agenda?view=semana&data=${today}` : `/painel/agenda?view=dia&data=${today}`}
-            className="font-medium text-brand-700 hover:underline"
-          >
-            Ver na agenda
-          </Link>
-        </p>
-      </div>
+      <ForecastCard day={sum(dayAppts)} week={sum(weekAppts)} today={today} />
 
       <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
