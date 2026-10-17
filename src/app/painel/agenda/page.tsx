@@ -101,7 +101,7 @@ export default async function AgendaPage({ searchParams }: PageProps<"/painel/ag
           ))}
         </div>
         {view !== "lista" && (
-          <div className="flex items-center gap-1">
+          <div className="flex flex-wrap items-center gap-1">
             <Link href={link(view, addDays(date, -step))} className="btn-secondary px-3" aria-label="Anterior">
               ‹
             </Link>
@@ -143,7 +143,7 @@ export default async function AgendaPage({ searchParams }: PageProps<"/painel/ag
         </nav>
       )}
 
-      <div className="grid gap-5 lg:grid-cols-[1fr_340px]">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_340px]">
         <div>
           {view === "dia" && (
             <>
