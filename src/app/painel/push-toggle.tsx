@@ -21,13 +21,19 @@ function detect(): Promise<State> | State {
   return navigator.serviceWorker
     .getRegistration("/")
     .then((reg) => reg?.pushManager.getSubscription())
-    .then((sub) => (sub ? "on" : "off"));
+    .then(async (sub) => {
+      if (!sub) return "off";
+      // Cadastra de novo no servidor: o aparelho pode ter sido ativado antes de a tabela existir.
+      const { ok } = await savePushSubscription(sub.toJSON());
+      return ok ? "on" : "off";
+    });
 }
 
 /** Liga ou desliga os avisos de agendamento neste aparelho. */
 export function PushToggle() {
   const [state, setState] = useState<State>("loading");
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [busy, startBusy] = useTransition();
 
   useEffect(() => {
@@ -52,15 +58,24 @@ export function PushToggle() {
         const { ok } = await savePushSubscription(sub.toJSON());
         if (!ok) throw new Error("save");
         setState("on");
-        await sendTestPush();
+        await test();
       } catch {
         setError("Não foi possível ativar os avisos neste aparelho. Tente de novo.");
       }
     });
   }
 
+  async function test() {
+    setNotice(null);
+    setError(null);
+    const sent = await sendTestPush();
+    if (sent > 0) setNotice("Aviso de teste enviado. Ele chega em alguns segundos.");
+    else setError("O aviso de teste não foi entregue. Toque em Desativar e depois em Ativar avisos de novo.");
+  }
+
   function disable() {
     setError(null);
+    setNotice(null);
     startBusy(async () => {
       const reg = await navigator.serviceWorker.getRegistration("/");
       const sub = await reg?.pushManager.getSubscription();
@@ -102,6 +117,7 @@ export function PushToggle() {
             </p>
           )}
           {error && <p className="mt-2 text-sm text-rose-700">{error}</p>}
+          {notice && <p className="mt-2 text-sm text-stone-700">{notice}</p>}
           {state === "off" && (
             <button type="button" onClick={enable} disabled={busy} className="btn-primary mt-3">
               {busy ? "Ativando…" : "Ativar avisos"}
@@ -109,7 +125,7 @@ export function PushToggle() {
           )}
           {state === "on" && (
             <div className="mt-3 flex flex-wrap gap-2">
-              <button type="button" onClick={() => startBusy(() => sendTestPush())} disabled={busy} className="btn-secondary">
+              <button type="button" onClick={() => startBusy(test)} disabled={busy} className="btn-secondary">
                 Enviar aviso de teste
               </button>
               <button type="button" onClick={disable} disabled={busy} className="btn-ghost">

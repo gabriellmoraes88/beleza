@@ -44,9 +44,10 @@ export async function removePushSubscription(endpoint: string): Promise<void> {
   await createAdminClient().from("push_subscriptions").delete().eq("endpoint", endpoint).eq("user_id", user.id);
 }
 
-export async function sendTestPush(): Promise<void> {
+/** Devolve quantos aparelhos receberam o aviso de teste. */
+export async function sendTestPush(): Promise<number> {
   const { studio } = await requireStudio();
-  await notifyStudio(studio.id, {
+  return notifyStudio(studio.id, {
     title: "Avisos ativados",
     body: "Você vai receber aqui os agendamentos novos, alterados e cancelados.",
     url: "/painel",
