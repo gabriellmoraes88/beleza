@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CalendarClock, CalendarPlus, MessageCircle } from "lucide-react";
 import { headers } from "next/headers";
+import { after } from "next/server";
 import { notFound, redirect } from "next/navigation";
 import { createPublicClient } from "@/lib/supabase/public";
 import { formatMoney } from "@/lib/format";
 import { whatsappLink } from "@/lib/phone";
+import { notifyAppointment } from "@/lib/push";
 import { formatDateLong, formatTime } from "@/lib/time";
 import { StatusBadge } from "@/components/ui";
 import { ConfirmButton } from "@/components/form";
@@ -47,7 +49,8 @@ async function cancel(formData: FormData) {
   "use server";
   const token = String(formData.get("token") ?? "");
   const supabase = createPublicClient();
-  await supabase.rpc("cancel_public_appointment", { p_token: token });
+  const { data: canceled } = await supabase.rpc("cancel_public_appointment", { p_token: token });
+  if (canceled) after(() => notifyAppointment(token, "cancelado"));
   redirect(`/agendamento/${token}`);
 }
 

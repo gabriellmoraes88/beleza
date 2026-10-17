@@ -395,4 +395,24 @@ set role anon;
 select (public.get_public_studio('espaco-da-ana') ->> 'accepting_bookings')::boolean = false as pagina_bloqueada;
 select count(*) = 0 as sem_slots from public.get_available_slots('espaco-da-ana', :'svc', :'dia');
 reset role;
+-- Avisos no celular: o navegador não lê os aparelhos cadastrados nem as chaves
+reset role;
+do $$
+declare r text;
+begin
+  foreach r in array array['anon', 'authenticated'] loop
+    execute format('set local role %I', r);
+    begin
+      perform 1 from public.push_subscriptions;
+      raise exception '% leu push_subscriptions', r;
+    exception when insufficient_privilege then null;
+    end;
+    begin
+      perform 1 from public.app_secrets;
+      raise exception '% leu app_secrets', r;
+    exception when insufficient_privilege then null;
+    end;
+    reset role;
+  end loop;
+end $$;
 \echo TODOS OS TESTES PASSARAM

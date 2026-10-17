@@ -1,9 +1,11 @@
 "use server";
 
+import { after } from "next/server";
 import { z } from "zod";
 import { createPublicClient } from "@/lib/supabase/public";
 import { friendlyError } from "@/lib/errors";
 import { isValidDateStr } from "@/lib/time";
+import { notifyAppointment } from "@/lib/push";
 
 const tokenSchema = z.string().regex(/^[a-f0-9]{64}$/);
 
@@ -25,5 +27,6 @@ export async function reschedule(token: string, startsAt: string): Promise<Resch
   const supabase = createPublicClient();
   const { error } = await supabase.rpc("reschedule_public_appointment", { p_token: token, p_starts_at: startsAt });
   if (error) return { ok: false, error: friendlyError(error), slotTaken: error.message === "SLOT_UNAVAILABLE" };
+  after(() => notifyAppointment(token, "alterado"));
   return { ok: true };
 }
