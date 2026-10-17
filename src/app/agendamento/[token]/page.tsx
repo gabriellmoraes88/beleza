@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { MessageCircle } from "lucide-react";
+import { CalendarClock, MessageCircle } from "lucide-react";
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { createPublicClient } from "@/lib/supabase/public";
@@ -40,7 +40,7 @@ async function cancel(formData: FormData) {
 
 export default async function AppointmentPage({ params, searchParams }: PageProps<"/agendamento/[token]">) {
   const { token } = await params;
-  const { novo } = await searchParams;
+  const { novo, alterado } = await searchParams;
   if (!/^[a-f0-9]{64}$/.test(token)) notFound();
 
   const supabase = createPublicClient();
@@ -52,6 +52,7 @@ export default async function AppointmentPage({ params, searchParams }: PageProp
   const color = appt.primary_color;
   const when = `${formatDateLong(appt.starts_at, tz)} às ${formatTime(appt.starts_at, tz)}`;
   const isNew = novo === "1";
+  const isChanged = alterado === "1";
   const situation =
     appt.status === "pending" ? "Aguardando confirmação" : appt.status === "canceled" ? "Cancelado" : "Confirmado";
   // Endereço por onde a cliente abriu a página, para o link do comprovante funcionar no domínio certo.
@@ -68,7 +69,7 @@ export default async function AppointmentPage({ params, searchParams }: PageProp
     appt.price_cents > 0 ? `Valor: ${formatMoney(appt.price_cents)}` : null,
     `Situação: ${situation}`,
     "",
-    `Para ver ou cancelar: ${link}`,
+    `Para alterar ou cancelar: ${link}`,
   ]
     .filter((line) => line !== null)
     .join("\n");
@@ -76,7 +77,7 @@ export default async function AppointmentPage({ params, searchParams }: PageProp
   return (
     <main className="mx-auto w-full max-w-lg flex-1 px-4 py-10">
       <div className="card text-center">
-        {isNew && appt.status !== "canceled" && (
+        {(isNew || isChanged) && appt.status !== "canceled" && (
           <div
             className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full text-2xl text-white"
             style={{ backgroundColor: color }}
@@ -88,9 +89,11 @@ export default async function AppointmentPage({ params, searchParams }: PageProp
         <h1 className="text-xl font-semibold">
           {appt.status === "canceled"
             ? "Agendamento cancelado"
-            : appt.status === "pending"
-              ? "Pedido de agendamento enviado!"
-              : isNew
+            : isChanged
+              ? "Horário alterado!"
+              : appt.status === "pending"
+                ? "Pedido de agendamento enviado!"
+                : isNew
                 ? "Agendamento confirmado!"
                 : "Seu agendamento"}
         </h1>
@@ -164,6 +167,12 @@ export default async function AppointmentPage({ params, searchParams }: PageProp
             </a>
           )}
           {appt.can_cancel && (
+            <Link href={`/agendamento/${token}/alterar`} className="btn-secondary py-3">
+              <CalendarClock className="h-5 w-5" aria-hidden />
+              Alterar horário
+            </Link>
+          )}
+          {appt.can_cancel && (
             <form action={cancel}>
               <input type="hidden" name="token" value={token} />
               <ConfirmButton message="Tem certeza que deseja cancelar este agendamento?" className="btn-danger w-full">
@@ -173,7 +182,7 @@ export default async function AppointmentPage({ params, searchParams }: PageProp
           )}
           {!appt.can_cancel && appt.status !== "canceled" && appt.cancel_limit_hours > 0 && (
             <p className="text-xs text-stone-500">
-              Cancelamentos online até {appt.cancel_limit_hours}h antes. Depois disso, fale com o studio.
+              Alterações e cancelamentos online até {appt.cancel_limit_hours}h antes. Depois disso, fale com o studio.
             </p>
           )}
           <Link href={`/s/${appt.studio_slug}`} className="btn-ghost">
@@ -182,7 +191,7 @@ export default async function AppointmentPage({ params, searchParams }: PageProp
         </div>
         {isNew && (
           <p className="mt-4 text-xs text-stone-500">
-            Guarde este link: por ele você consulta ou cancela seu agendamento.
+            Guarde este link: por ele você consulta, altera ou cancela seu agendamento.
           </p>
         )}
       </div>

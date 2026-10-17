@@ -342,6 +342,42 @@ select public.set_professional_services(:'prof2',
 select count(*) = 0 as todos_vira_padrao from public.professional_services where professional_id = :'prof2';
 reset role;
 
+-- Alterar horário: mesmo link, mesma profissional, horário antigo liberado
+set role anon;
+select s as slot_alt from public.get_available_slots_multi('espaco-da-ana', array[:'svc']::uuid[], :'dia2', :'prof2') s order by s limit 1 \gset
+select token as tok_alt from public.book_appointment_multi('espaco-da-ana', array[:'svc']::uuid[], :'slot_alt', 'Gil', '5511911110005', null, :'prof2') \gset
+-- O próprio horário aparece de novo na lista (o agendamento sendo alterado não conta como ocupado)
+select count(*) = 1 as alt_ve_proprio_horario from public.get_reschedule_slots(:'tok_alt', :'dia2') s where s = :'slot_alt';
+select s as slot_novo from public.get_reschedule_slots(:'tok_alt', :'dia2') s where s >= :'slot_alt'::timestamptz + interval '2 hours' order by s limit 1 \gset
+select public.reschedule_public_appointment(:'tok_alt', :'slot_novo') is not null as alterou;
+select (public.get_public_appointment(:'tok_alt') ->> 'starts_at')::timestamptz = :'slot_novo'::timestamptz as alt_mesmo_link;
+select public.get_public_appointment(:'tok_alt') ->> 'professional_name' = 'Júlia' as alt_mesma_profissional;
+select count(*) = 1 as alt_libera_antigo from public.get_available_slots_multi('espaco-da-ana', array[:'svc']::uuid[], :'dia2', :'prof2') s where s = :'slot_alt';
+-- Horário de outra cliente: recusado
+select token as tok_outro from public.book_appointment_multi('espaco-da-ana', array[:'svc']::uuid[], :'slot_alt', 'Lia', '5511911110006', null, :'prof2') \gset
+select set_config('t.tok_alt', :'tok_alt', false), set_config('t.slot_alt', :'slot_alt', false);
+do $$ begin
+  begin
+    perform public.reschedule_public_appointment(current_setting('t.tok_alt'), current_setting('t.slot_alt')::timestamptz);
+    raise exception 'alterou para horário ocupado';
+  exception when others then
+    if sqlerrm <> 'SLOT_UNAVAILABLE' then raise; end if;
+  end;
+end $$;
+-- Cancelado não altera
+select public.cancel_public_appointment(:'tok_alt') as cancelou_alt;
+do $$ begin
+  begin
+    perform public.reschedule_public_appointment(current_setting('t.tok_alt'), current_setting('t.slot_alt')::timestamptz + interval '3 hours');
+    raise exception 'alterou agendamento cancelado';
+  exception when others then
+    if sqlerrm <> 'CANNOT_CHANGE' then raise; end if;
+  end;
+end $$;
+select count(*) = 0 as cancelado_sem_horarios from public.get_reschedule_slots(:'tok_alt', :'dia2');
+select public.cancel_public_appointment(:'tok_outro') as cancelou_outro;
+reset role;
+
 -- Assinatura expirada bloqueia escrita e agendamento público, sem apagar dados
 reset role;
 update public.subscriptions set trial_ends_at = now() - interval '1 day' where studio_id = :'ana_studio';
