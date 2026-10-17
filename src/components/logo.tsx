@@ -16,11 +16,33 @@ export function LogoMark({ className = "h-8 w-auto" }: { className?: string }) {
   );
 }
 
-export function Logo({ className = "", markClassName }: { className?: string; markClassName?: string }) {
+export const SLOGAN = "Sua agenda no link da bio.";
+
+export function Logo({
+  className = "",
+  markClassName,
+  slogan = false,
+  sloganClassName = "",
+}: {
+  className?: string;
+  markClassName?: string;
+  /** Mostra o slogan embaixo do nome. */
+  slogan?: boolean;
+  sloganClassName?: string;
+}) {
   return (
     <span className={`inline-flex items-center gap-2 font-bold tracking-tight text-stone-900 ${className}`}>
       <LogoMark className={markClassName} />
-      Bellink
+      {slogan ? (
+        <span className="flex flex-col leading-none">
+          Bellink
+          <span className={`mt-1 text-xs font-normal tracking-normal whitespace-nowrap text-stone-500 ${sloganClassName}`}>
+            {SLOGAN}
+          </span>
+        </span>
+      ) : (
+        "Bellink"
+      )}
     </span>
   );
 }

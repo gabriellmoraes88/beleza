@@ -6,7 +6,7 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
     <main className="flex flex-1 items-center justify-center px-4 py-10">
       <div className="w-full max-w-sm">
         <Link href="/" className="mb-6 flex justify-center" aria-label="Bellink, início">
-          <Logo className="text-xl" />
+          <Logo className="text-xl" markClassName="h-9 w-auto" slogan />
         </Link>
         <div className="card">{children}</div>
       </div>

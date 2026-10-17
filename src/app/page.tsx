@@ -239,7 +239,7 @@ export default async function Home() {
       <header className="sticky top-0 z-20 border-b border-stone-200/70 bg-white/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
           <Link href="/" aria-label="Bellink, início">
-            <Logo className="text-xl" />
+            <Logo className="text-xl" markClassName="h-9 w-auto" slogan sloganClassName="hidden sm:block" />
           </Link>
           <nav className="flex items-center gap-1 sm:gap-2">
             <a href="#como-funciona" className="btn-ghost hidden sm:inline-flex">
