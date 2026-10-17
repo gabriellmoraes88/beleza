@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Logo } from "@/components/logo";
 import { getStudioContext } from "@/lib/studio";
 import { signOut } from "@/app/(auth)/actions";
 import { BottomNav, SideNav } from "./nav";
@@ -11,7 +12,7 @@ export default async function PainelLayout({ children }: LayoutProps<"/painel">)
     return (
       <div className="flex-1">
         <header className="flex items-center justify-between px-4 py-4">
-          <span className="text-lg font-semibold text-brand-700">Bellink</span>
+          <Logo className="text-lg" markClassName="h-6 w-auto" />
           <form action={signOut}>
             <button className="btn-ghost">Sair</button>
           </form>

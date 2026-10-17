@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Logo } from "@/components/logo";
 import { requirePlatformAdmin } from "./guard";
 import { AdminNav } from "./nav";
 
@@ -13,7 +14,7 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
         <div className="mx-auto max-w-6xl px-4">
           <div className="flex items-center justify-between py-3">
             <Link href="/admin" className="flex items-center gap-2">
-              <span className="text-lg font-bold tracking-tight text-stone-900">Bellink</span>
+              <Logo className="text-lg" markClassName="h-6 w-auto" />
               <span className="rounded-full bg-stone-900 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-white">
                 Admin
               </span>
