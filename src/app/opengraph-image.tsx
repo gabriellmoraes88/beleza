@@ -60,7 +60,7 @@ export default function Image() {
             <span>·</span>
             <span>Sem cartão para testar</span>
             <span>·</span>
-            <span>Pix e cartão</span>
+            <span>Pronto em minutos</span>
           </div>
         </div>
       </div>
