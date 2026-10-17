@@ -185,6 +185,37 @@ begin
     raise exception 'valor/nome somados errados: %', a;
   end if;
 end $$;
+
+-- Mesmo telefone com outro nome: mesma ficha, mas o agendamento guarda o nome digitado
+select s as slot_nome from public.get_available_slots_multi('espaco-da-ana', array[:'svc']::uuid[], (:'dia'::date + 2)) s limit 1 \gset
+select token as tok_nome from public.book_appointment_multi('espaco-da-ana', array[:'svc']::uuid[], :'slot_nome', 'Bia Lima', '5511933332222') \gset
+reset role;
+select set_config('t.tok_nome', :'tok_nome', false);
+select set_config('t.tok_multi', :'tok_multi', false);
+do $$
+declare
+  a public.appointments;
+  b public.appointments;
+begin
+  select * into a from public.appointments where public_token = current_setting('t.tok_multi');
+  select * into b from public.appointments where public_token = current_setting('t.tok_nome');
+  if b.customer_id <> a.customer_id then raise exception 'mesmo telefone virou outra ficha'; end if;
+  if a.customer_name <> 'Rita Lima' or b.customer_name <> 'Bia Lima' then
+    raise exception 'nome por agendamento errado: % / %', a.customer_name, b.customer_name;
+  end if;
+  if (select name from public.customers where id = a.customer_id) <> 'Rita Lima' then
+    raise exception 'ficha perdeu o primeiro nome';
+  end if;
+  if public.get_public_appointment(current_setting('t.tok_nome')) ->> 'customer_first_name' <> 'Bia' then
+    raise exception 'comprovante com nome errado';
+  end if;
+  update public.customers set name = 'Rita Souza Lima' where id = a.customer_id;
+  if (select customer_name from public.appointments where id = a.id) <> 'Rita Souza Lima'
+     or (select customer_name from public.appointments where id = b.id) <> 'Bia Lima' then
+    raise exception 'correção do nome na ficha não acompanhou só os agendamentos dela';
+  end if;
+end $$;
+set role anon;
 select set_config('t.slot_multi', :'slot_multi', false), set_config('t.svc2', :'svc2', false);
 do $$ begin
   -- 60 min depois do início ainda está dentro dos 75 min: deve falhar

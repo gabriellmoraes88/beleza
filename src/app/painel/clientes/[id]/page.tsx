@@ -20,7 +20,7 @@ export default async function CustomerPage({ params }: PageProps<"/painel/client
     supabase.from("customers").select("*").eq("id", id).eq("studio_id", studio.id).maybeSingle(),
     supabase
       .from("appointments")
-      .select("id, starts_at, status, service_name, price_cents")
+      .select("id, starts_at, status, service_name, price_cents, customer_name")
       .eq("customer_id", id)
       .eq("studio_id", studio.id)
       .order("starts_at", { ascending: false })
@@ -72,6 +72,9 @@ export default async function CustomerPage({ params }: PageProps<"/painel/client
                     {formatDateLong(h.starts_at, tz)} · {formatTime(h.starts_at, tz)}
                     {h.price_cents > 0 && ` · ${formatMoney(h.price_cents)}`}
                   </p>
+                  {h.customer_name && h.customer_name !== customer.name && (
+                    <p className="text-stone-500">Agendado como {h.customer_name}</p>
+                  )}
                 </div>
                 <StatusBadge status={h.status} />
               </li>
