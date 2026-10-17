@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Logo } from "@/components/logo";
 import { createPublicClient } from "@/lib/supabase/public";
 import { formatMoney } from "@/lib/format";
 import {
@@ -237,8 +238,8 @@ export default async function Home() {
       {/* Topo */}
       <header className="sticky top-0 z-20 border-b border-stone-200/70 bg-white/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-          <Link href="/" className="text-xl font-bold tracking-tight text-stone-900">
-            Bellink
+          <Link href="/" aria-label="Bellink, início">
+            <Logo className="text-xl" markClassName="h-9 w-auto" slogan sloganClassName="hidden sm:block" />
           </Link>
           <nav className="flex items-center gap-1 sm:gap-2">
             <a href="#como-funciona" className="btn-ghost hidden sm:inline-flex">
@@ -482,8 +483,9 @@ export default async function Home() {
 
       <footer className="border-t border-stone-200">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-8 text-sm text-stone-500 sm:flex-row">
-          <p>
-            <span className="font-bold text-stone-900">Bellink</span> · Sua agenda no link da bio.
+          <p className="flex items-center gap-2">
+            <Logo markClassName="h-5 w-auto" />
+            <span>· Sua agenda no link da bio.</span>
           </p>
           <div className="flex gap-5">
             <Link href="/entrar" className="hover:text-stone-900">
