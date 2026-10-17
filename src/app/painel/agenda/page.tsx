@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getTeam, requireStudio } from "@/lib/studio";
 import type { Appointment } from "@/lib/types";
+import { bookedName } from "@/lib/format";
 import {
   WEEKDAYS_SHORT,
   addDays,
@@ -199,7 +200,7 @@ export default async function AgendaPage({ searchParams }: PageProps<"/painel/ag
                               }`}
                             >
                               <span className="font-semibold">{formatTime(a.starts_at, tz)}</span>{" "}
-                              {a.customers?.name?.split(" ")[0]}
+                              {bookedName(a).split(" ")[0]}
                               <span className="block truncate opacity-80">{a.service_name}</span>
                               {multi && !filter && a.professionals?.name && (
                                 <span className="block truncate opacity-70">{a.professionals.name}</span>

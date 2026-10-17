@@ -79,7 +79,7 @@ export async function notifyAppointment(token: string, kind: keyof typeof TITLES
     const admin = createAdminClient();
     const { data: appt } = await admin
       .from("appointments")
-      .select("studio_id, professional_id, customer_id, starts_at, service_name")
+      .select("studio_id, professional_id, customer_id, customer_name, starts_at, service_name")
       .eq("public_token", token)
       .maybeSingle();
     if (!appt) return;
@@ -90,7 +90,7 @@ export async function notifyAppointment(token: string, kind: keyof typeof TITLES
     ]);
     const tz = studio?.timezone ?? "America/Sao_Paulo";
     const when = `${formatDateLong(appt.starts_at, tz)} às ${formatTime(appt.starts_at, tz)}`;
-    const who = customer?.name?.split(" ")[0] ?? "Cliente";
+    const who = (appt.customer_name ?? customer?.name)?.split(" ")[0] ?? "Cliente";
     const withProf = prof?.name ? ` · com ${prof.name}` : "";
     const date = toLocalDate(new Date(appt.starts_at), tz);
     await notifyStudio(

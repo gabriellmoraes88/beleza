@@ -3,7 +3,8 @@ import Link from "next/link";
 import { requireStudio } from "@/lib/studio";
 import { SITE_URL } from "@/lib/env";
 import type { Appointment } from "@/lib/types";
-import { dayRangeUtc, formatDateLong, formatTime, todayIn } from "@/lib/time";
+import { bookedName, formatMoney } from "@/lib/format";
+import { addDays, dayRangeUtc, formatDateLong, formatTime, startOfWeek, todayIn } from "@/lib/time";
 import { EmptyState, StatusBadge } from "@/components/ui";
 import { ShareLink } from "@/components/share-link";
 import { InstallApp } from "./install-app";
@@ -11,13 +12,18 @@ import { PushToggle } from "./push-toggle";
 
 export const metadata: Metadata = { title: "Início" };
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: PageProps<"/painel">) {
   const { supabase, studio } = await requireStudio();
   const tz = studio.timezone;
   const today = todayIn(tz);
   const [dayStart, dayEnd] = dayRangeUtc(today, tz);
+  const week = (await searchParams).previsto === "semana";
+  const weekStart = startOfWeek(today);
+  const [forecastStart, forecastEnd] = week
+    ? [dayRangeUtc(weekStart, tz)[0], dayRangeUtc(addDays(weekStart, 6), tz)[1]]
+    : [dayStart, dayEnd];
 
-  const [{ data: todayData }, { data: upcomingData }, { data: services }, { count: hoursCount }] = await Promise.all([
+  const [{ data: todayData }, { data: upcomingData }, { data: services }, { count: hoursCount }, { data: forecastData }] = await Promise.all([
     supabase
       .from("appointments")
       .select("*, customers(id, name, phone)")
@@ -35,7 +41,17 @@ export default async function DashboardPage() {
       .limit(5),
     supabase.from("services").select("id, duration_minutes, is_public").eq("studio_id", studio.id).eq("active", true),
     supabase.from("working_hours").select("id", { count: "exact", head: true }).eq("studio_id", studio.id),
+    // Previsto: tudo que não foi cancelado nem marcado como falta.
+    supabase
+      .from("appointments")
+      .select("price_cents")
+      .eq("studio_id", studio.id)
+      .in("status", ["pending", "confirmed", "completed"])
+      .gte("starts_at", forecastStart.toISOString())
+      .lt("starts_at", forecastEnd.toISOString()),
   ]);
+  const forecast = forecastData ?? [];
+  const forecastCents = forecast.reduce((sum, a) => sum + a.price_cents, 0);
 
   const todayAppts = (todayData ?? []) as Appointment[];
   const upcoming = (upcomingData ?? []) as Appointment[];
@@ -98,6 +114,41 @@ export default async function DashboardPage() {
         </div>
       )}
 
+      <div className="card mb-5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-semibold">Previsto</h2>
+          <div className="flex rounded-full bg-stone-100 p-1 text-sm" role="tablist">
+            {[
+              { label: "Hoje", href: "/painel", on: !week },
+              { label: "Esta semana", href: "/painel?previsto=semana", on: week },
+            ].map((t) => (
+              <Link
+                key={t.label}
+                href={t.href}
+                scroll={false}
+                role="tab"
+                aria-selected={t.on}
+                className={`rounded-full px-3 py-1 font-medium ${t.on ? "bg-white shadow-sm" : "text-stone-600"}`}
+              >
+                {t.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+        <p className="mt-3 text-3xl font-semibold tracking-tight">{formatMoney(forecastCents)}</p>
+        <p className="text-sm text-stone-600">
+          {forecast.length === 1 ? "1 atendimento" : `${forecast.length} atendimentos`}{" "}
+          {week ? "de domingo a sábado" : "hoje"}
+          {" · "}
+          <Link
+            href={week ? `/painel/agenda?view=semana&data=${today}` : `/painel/agenda?view=dia&data=${today}`}
+            className="font-medium text-brand-700 hover:underline"
+          >
+            Ver na agenda
+          </Link>
+        </p>
+      </div>
+
       <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           { label: "Agendamentos hoje", value: active.length },
@@ -136,7 +187,7 @@ export default async function DashboardPage() {
                   <Link href={`/painel/agenda?view=dia&data=${today}`} className="card flex items-center gap-3 py-3 hover:border-stone-300">
                     <span className="w-12 font-semibold">{formatTime(a.starts_at, tz)}</span>
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate font-medium">{a.customers?.name}</span>
+                      <span className="block truncate font-medium">{bookedName(a)}</span>
                       <span className="block truncate text-sm text-stone-600">{a.service_name}</span>
                     </span>
                     <StatusBadge status={a.status} />
@@ -156,7 +207,7 @@ export default async function DashboardPage() {
                 {upcoming.map((a) => (
                   <li key={a.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
                     <div className="min-w-0">
-                      <p className="truncate font-medium">{a.customers?.name}</p>
+                      <p className="truncate font-medium">{bookedName(a)}</p>
                       <p className="truncate capitalize text-stone-600">
                         {formatDateLong(a.starts_at, tz)} · {formatTime(a.starts_at, tz)} · {a.service_name}
                       </p>

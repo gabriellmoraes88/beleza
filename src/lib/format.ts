@@ -12,6 +12,11 @@ export function parseMoneyToCents(input: string): number | null {
   return Math.round(value * 100);
 }
 
+/** Nome digitado naquele agendamento; se não houver, o nome da ficha. */
+export function bookedName(appt: { customer_name?: string | null; customers?: { name: string } | null }): string {
+  return appt.customer_name ?? appt.customers?.name ?? "Cliente";
+}
+
 export function formatDuration(minutes: number): string {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;

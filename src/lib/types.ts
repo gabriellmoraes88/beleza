@@ -49,6 +49,7 @@ export interface Appointment {
   source: "online" | "manual";
   service_name: string;
   price_cents: number;
+  customer_name: string | null;
   customer_note: string | null;
   internal_note: string | null;
   customers?: { id: string; name: string; phone: string } | null;

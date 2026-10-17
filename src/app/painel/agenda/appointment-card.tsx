@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Appointment } from "@/lib/types";
-import { formatMoney } from "@/lib/format";
+import { bookedName, formatMoney } from "@/lib/format";
 import { formatPhone, whatsappLink } from "@/lib/phone";
 import { formatDateLong, formatTime, toLocalDate } from "@/lib/time";
 import { StatusBadge } from "@/components/ui";
@@ -47,7 +47,7 @@ export function AppointmentCard({
         </div>
         <div className="min-w-0 flex-1">
           {showDate && <p className="text-xs capitalize text-stone-500">{formatDateLong(appt.starts_at, timeZone)}</p>}
-          <p className="truncate font-medium">{customer?.name ?? "Cliente"}</p>
+          <p className="truncate font-medium">{bookedName(appt)}</p>
           <p className="truncate text-sm text-stone-600">
             {appt.service_name}
             {showProfessional && appt.professionals?.name && ` · com ${appt.professionals.name}`}
@@ -61,7 +61,7 @@ export function AppointmentCard({
           {customer && (
             <>
               <Link href={`/painel/clientes/${customer.id}`} className="font-medium text-brand-700 hover:underline">
-                Ver cliente
+                {appt.customer_name && appt.customer_name !== customer.name ? `Ficha: ${customer.name}` : "Ver cliente"}
               </Link>
               <a href={whatsappLink(customer.phone)} target="_blank" rel="noreferrer" className="hover:underline">
                 {formatPhone(customer.phone)} (WhatsApp)
