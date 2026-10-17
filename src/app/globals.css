@@ -50,3 +50,13 @@ body {
 @utility card {
   @apply rounded-2xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5;
 }
+
+/* Fundo do site: areia clara com a grade de pontos da logo, sumindo para a esquerda. */
+@utility bg-areia {
+  background-color: #f4efe8;
+}
+@utility fundo-marca {
+  background-image: radial-gradient(circle, #d6cfc6 5px, transparent 5.5px);
+  background-size: 44px 44px;
+  mask-image: linear-gradient(100deg, transparent 35%, #000 75%);
+}
