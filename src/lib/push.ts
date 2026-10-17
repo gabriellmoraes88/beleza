@@ -30,14 +30,19 @@ function subject() {
   return site ?? "mailto:avisos@bellink.com.br";
 }
 
-/** Envia o aviso para todos os aparelhos cadastrados do studio. Nunca lança erro. */
-export async function notifyStudio(studioId: string, message: PushMessage, admin: Admin = createAdminClient()) {
+/** Envia o aviso para todos os aparelhos cadastrados do studio e devolve quantos aceitaram. Nunca lança erro. */
+export async function notifyStudio(
+  studioId: string,
+  message: PushMessage,
+  admin: Admin = createAdminClient(),
+): Promise<number> {
+  let sent = 0;
   try {
     const { data: subs } = await admin
       .from("push_subscriptions")
       .select("id, endpoint, p256dh, auth")
       .eq("studio_id", studioId);
-    if (!subs?.length) return;
+    if (!subs?.length) return 0;
 
     const keys = await vapidKeys(admin);
     const options = { vapidDetails: { subject: subject(), ...keys }, TTL: 60 * 60 * 24 };
@@ -47,6 +52,7 @@ export async function notifyStudio(studioId: string, message: PushMessage, admin
       subs.map(async (s) => {
         try {
           await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload, options);
+          sent++;
         } catch (e) {
           const status = (e as { statusCode?: number }).statusCode;
           // Aparelho desativou ou o cadastro expirou: remove para não tentar de novo.
@@ -58,6 +64,7 @@ export async function notifyStudio(studioId: string, message: PushMessage, admin
   } catch (e) {
     console.error("push: falha ao avisar studio", e);
   }
+  return sent;
 }
 
 const TITLES = {
