@@ -41,7 +41,7 @@ export default async function ReschedulePage({ params }: PageProps<"/agendamento
         </p>
         <p className="mt-3 rounded-xl bg-stone-50 px-3 py-2 text-sm">
           Horário atual:{" "}
-          <span className="font-medium capitalize">
+          <span className="font-medium first-letter:uppercase">
             {formatDateLong(appt.starts_at, tz)} às {formatTime(appt.starts_at, tz)}
           </span>
         </p>
