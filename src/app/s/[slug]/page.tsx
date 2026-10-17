@@ -21,9 +21,21 @@ export async function generateMetadata({ params }: PageProps<"/s/[slug]">): Prom
   const { slug } = await params;
   const studio = await getStudio(slug);
   if (!studio) return { title: "Studio não encontrado" };
+  const title = `Agende com ${studio.name}`;
+  const description = studio.description ?? `Agende seu horário online com ${studio.name}.`;
+  const photo = studio.photos?.[0];
   return {
-    title: `Agende com ${studio.name}`,
-    description: studio.description ?? `Agende seu horário online com ${studio.name}.`,
+    title,
+    description,
+    // Ao compartilhar o link do studio, a prévia mostra o nome e a primeira foto dele (sem foto, a imagem do Bellink).
+    openGraph: {
+      siteName: "Bellink",
+      title,
+      description,
+      locale: "pt_BR",
+      type: "website",
+      images: photo ? [photoUrl(photo)] : [{ url: "/opengraph-image", width: 1200, height: 630, alt: "Bellink" }],
+    },
   };
 }
 
