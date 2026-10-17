@@ -66,7 +66,7 @@ export default async function HoursPage({ searchParams }: PageProps<"/painel/hor
           ))}
         </nav>
       )}
-      <div className="grid gap-5 lg:grid-cols-[1fr_360px]">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_360px]">
         <ActionForm key={professional?.id} action={saveWorkingHours} className="card space-y-3">
           {professional && <input type="hidden" name="professional_id" value={professional.id} />}
           {multi && professional && <p className="font-semibold">Horário de {professional.name}</p>}
