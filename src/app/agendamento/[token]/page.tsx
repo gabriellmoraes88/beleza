@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CalendarClock, MessageCircle } from "lucide-react";
+import { CalendarClock, CalendarPlus, MessageCircle } from "lucide-react";
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { createPublicClient } from "@/lib/supabase/public";
@@ -29,6 +29,19 @@ type PublicAppointment = {
   can_cancel: boolean;
   cancel_limit_hours: number;
 };
+
+// Link para salvar no Google Agenda (os lembretes seguem o padrão da agenda da cliente).
+function googleCalendarLink(appt: PublicAppointment, link: string) {
+  const fmt = (iso: string) => new Date(iso).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: `${appt.service_name} · ${appt.studio_name}`,
+    dates: `${fmt(appt.starts_at)}/${fmt(appt.ends_at)}`,
+    details: `${appt.professional_name ? `Com ${appt.professional_name}\n` : ""}Para alterar ou cancelar: ${link}`,
+    ...(appt.studio_address ? { location: appt.studio_address } : {}),
+  });
+  return `https://calendar.google.com/calendar/render?${params}`;
+}
 
 async function cancel(formData: FormData) {
   "use server";
@@ -165,6 +178,22 @@ export default async function AppointmentPage({ params, searchParams }: PageProp
             >
               Falar com o studio no WhatsApp
             </a>
+          )}
+          {appt.status !== "canceled" && new Date(appt.starts_at) > new Date() && (
+            <>
+              <a href={`/agendamento/${token}/agenda.ics`} className="btn-secondary py-3">
+                <CalendarPlus className="h-5 w-5" aria-hidden />
+                Adicionar à minha agenda
+              </a>
+              <a
+                href={googleCalendarLink(appt, link)}
+                target="_blank"
+                rel="noreferrer"
+                className="-mt-1 text-xs text-stone-500 underline"
+              >
+                Usa Google Agenda? Toque aqui
+              </a>
+            </>
           )}
           {appt.can_cancel && (
             <Link href={`/agendamento/${token}/alterar`} className="btn-secondary py-3">
