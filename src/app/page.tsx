@@ -234,9 +234,9 @@ export default async function Home() {
   const plan = await getPlan();
   const trialCta = plan.trial_days ? `Começar ${plan.trial_days} dias grátis` : "Começar agora";
   return (
-    <main className="flex-1 bg-white">
+    <main className="flex-1 bg-areia">
       {/* Topo */}
-      <header className="sticky top-0 z-20 border-b border-stone-200/70 bg-white/80 backdrop-blur">
+      <header className="sticky top-0 z-20 border-b border-stone-200/70 bg-[#f4efe8]/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
           <Link href="/" aria-label="Bellink, início">
             <Logo className="text-xl" markClassName="h-9 w-auto" slogan sloganClassName="hidden sm:block" />
@@ -260,7 +260,7 @@ export default async function Home() {
 
       {/* Hero */}
       <section className="relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_60%_at_80%_20%,#f5f5f4_0%,transparent_70%),radial-gradient(50%_50%_at_10%_90%,#fafaf9_0%,transparent_70%)]" />
+        <div className="pointer-events-none absolute inset-0 fundo-marca" />
         <div className="relative mx-auto grid max-w-6xl items-center gap-14 px-4 pb-20 pt-14 sm:pt-20 lg:grid-cols-[1.1fr_1fr] lg:pb-28">
           <div className="text-center lg:text-left">
             <span className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white px-3 py-1 text-xs font-medium text-stone-600">
@@ -312,14 +312,14 @@ export default async function Home() {
       </section>
 
       {/* Categorias */}
-      <section className="border-t border-stone-100 py-12">
+      <section className="border-t border-stone-200/70 py-12">
         <div className="mx-auto max-w-6xl px-4">
           <p className="text-center text-sm text-stone-500">Feito para quem atende com hora marcada</p>
           <ul className="-mx-4 mt-6 flex snap-x gap-2 overflow-x-auto px-4 pb-2 [scrollbar-width:none] lg:mx-0 lg:grid lg:grid-cols-12 lg:overflow-visible lg:px-0">
             {categories.map(({ label, Icon: CategoryIcon }) => (
               <li
                 key={label}
-                className="flex w-24 shrink-0 snap-start flex-col items-center gap-2 rounded-2xl px-1 py-3 text-center transition hover:bg-stone-50 lg:w-auto"
+                className="flex w-24 shrink-0 snap-start flex-col items-center gap-2 rounded-2xl px-1 py-3 text-center transition hover:bg-white/60 lg:w-auto"
               >
                 <CategoryIcon className="h-9 w-9 text-stone-700" strokeWidth={1.2} aria-hidden />
                 <span className="text-[13px] leading-tight text-stone-600">{label}</span>
@@ -330,7 +330,7 @@ export default async function Home() {
       </section>
 
       {/* Recursos */}
-      <section className="border-t border-stone-100 bg-stone-50/60 py-20 sm:py-28">
+      <section className="border-t border-stone-200/70 bg-white/50 py-20 sm:py-28">
         <div className="mx-auto max-w-6xl px-4">
           <div className="mx-auto max-w-2xl text-center">
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-stone-500">Por que Bellink</p>
@@ -443,7 +443,7 @@ export default async function Home() {
       </section>
 
       {/* Perguntas */}
-      <section className="border-t border-stone-100 bg-stone-50/60 py-20 sm:py-28">
+      <section className="border-t border-stone-200/70 bg-white/50 py-20 sm:py-28">
         <div className="mx-auto max-w-3xl px-4">
           <h2 className="text-center text-3xl font-bold tracking-tight text-stone-900 sm:text-4xl">Perguntas frequentes</h2>
           <div className="mt-10 divide-y divide-stone-200 rounded-3xl border border-stone-200 bg-white">
