@@ -6,6 +6,7 @@ import type { Appointment } from "@/lib/types";
 import { dayRangeUtc, formatDateLong, formatTime, todayIn } from "@/lib/time";
 import { EmptyState, StatusBadge } from "@/components/ui";
 import { ShareLink } from "@/components/share-link";
+import { PushToggle } from "./push-toggle";
 
 export const metadata: Metadata = { title: "Início" };
 
@@ -172,6 +173,7 @@ export default async function DashboardPage() {
             <h2 className="mb-3 font-semibold">Compartilhe seu link</h2>
             <ShareLink url={url} studioName={studio.name} />
           </div>
+          <PushToggle />
         </section>
       </div>
     </>

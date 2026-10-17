@@ -1,10 +1,12 @@
 "use server";
 
+import { after } from "next/server";
 import { z } from "zod";
 import { createPublicClient } from "@/lib/supabase/public";
 import { normalizePhone } from "@/lib/phone";
 import { friendlyError } from "@/lib/errors";
 import { isValidDateStr } from "@/lib/time";
+import { notifyAppointment } from "@/lib/push";
 
 const serviceIdsSchema = z.array(z.string().uuid()).min(1).max(5);
 
@@ -70,5 +72,7 @@ export async function bookAppointment(input: z.input<typeof bookingSchema>): Pro
   if (error || !data) {
     return { ok: false, error: friendlyError(error), slotTaken: error?.message === "SLOT_UNAVAILABLE" };
   }
-  return { ok: true, token: data.token };
+  const token = data.token;
+  after(() => notifyAppointment(token, "novo"));
+  return { ok: true, token };
 }

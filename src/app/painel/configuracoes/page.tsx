@@ -5,6 +5,7 @@ import { formatPhone } from "@/lib/phone";
 import { ActionForm, SubmitButton } from "@/components/form";
 import { Field, PageHeader } from "@/components/ui";
 import { ShareLink } from "@/components/share-link";
+import { PushToggle } from "../push-toggle";
 import { ConfirmButton } from "@/components/form";
 import { MAX_PHOTOS, photoUrl } from "@/lib/photos";
 import { updateStudio } from "./actions";
@@ -29,6 +30,9 @@ export default async function SettingsPage() {
       <div className="mb-5 card">
         <h2 className="mb-3 font-semibold">Seu link de agendamento</h2>
         <ShareLink url={url} studioName={studio.name} />
+      </div>
+      <div className="mb-5">
+        <PushToggle />
       </div>
 
       <section className="mb-5 card">
