@@ -53,7 +53,7 @@ export default function Image() {
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
           <div style={{ fontSize: 40, lineHeight: 1.3, maxWidth: 980 }}>
-            Agenda online para manicures, cabeleireiras e esteticistas. Sua cliente marca sozinha pelo seu link.
+            Agenda online para salões, barbearias, tatuadores e estética. Seu cliente marca sozinho pelo seu link.
           </div>
           <div style={{ display: "flex", gap: 14, fontSize: 28, color: "#57534e" }}>
             <span>14 dias grátis</span>
