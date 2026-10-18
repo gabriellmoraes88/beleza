@@ -15,6 +15,9 @@ export default function SignUpPage() {
         <Field label="E-mail">
           <input className="input" type="email" name="email" autoComplete="email" required />
         </Field>
+        <Field label="CPF ou CNPJ" hint="Usado para recuperar a senha se você esquecer.">
+          <input className="input" name="cpf_cnpj" inputMode="numeric" autoComplete="off" maxLength={18} required />
+        </Field>
         <Field label="Senha" hint="Mínimo de 8 caracteres.">
           <input className="input" type="password" name="password" autoComplete="new-password" minLength={8} required />
         </Field>

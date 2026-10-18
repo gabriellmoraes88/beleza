@@ -11,17 +11,17 @@ import { MAX_PHOTOS, photoUrl } from "@/lib/photos";
 import { updateStudio } from "./actions";
 import { deletePhoto, removeLogo, uploadLogo, uploadPhoto } from "./photo-actions";
 import { ImageUpload } from "@/components/image-upload";
+import { hasAccountDocument } from "@/lib/account-doc";
+import { RecoveryDocCard } from "./recovery-doc";
 
 export const metadata: Metadata = { title: "Configurações do studio" };
 
 export default async function SettingsPage() {
-  const { supabase, studio } = await requireStudio();
-  const { data: photos } = await supabase
-    .from("studio_photos")
-    .select("id, path")
-    .eq("studio_id", studio.id)
-    .order("sort_order")
-    .order("created_at");
+  const { supabase, studio, user } = await requireStudio();
+  const [{ data: photos }, docSaved] = await Promise.all([
+    supabase.from("studio_photos").select("id, path").eq("studio_id", studio.id).order("sort_order").order("created_at"),
+    hasAccountDocument(user.id),
+  ]);
   const url = `${SITE_URL()}/s/${studio.slug}`;
 
   return (
@@ -34,6 +34,7 @@ export default async function SettingsPage() {
       <div className="mb-5">
         <PushToggle />
       </div>
+      <RecoveryDocCard saved={docSaved} />
 
       <section className="mb-5 card">
         <h2 className="font-semibold">Logotipo</h2>

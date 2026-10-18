@@ -446,4 +446,23 @@ begin
     reset role;
   end loop;
 end $$;
+-- Recuperar senha por CPF/CNPJ: só o servidor (service_role) lê os hashes e acha a conta pelo e-mail
+do $$
+declare r text;
+begin
+  foreach r in array array['anon', 'authenticated'] loop
+    execute format('set local role %I', r);
+    begin
+      perform 1 from public.account_documents;
+      raise exception '% leu account_documents', r;
+    exception when insufficient_privilege then null;
+    end;
+    begin
+      perform public.user_id_by_email('x@x.com');
+      raise exception '% chamou user_id_by_email', r;
+    exception when insufficient_privilege then null;
+    end;
+    reset role;
+  end loop;
+end $$;
 \echo TODOS OS TESTES PASSARAM

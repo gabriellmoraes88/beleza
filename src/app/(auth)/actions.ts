@@ -1,8 +1,13 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { findAccountByDocument, saveAccountDocument } from "@/lib/account-doc";
+import { normalizeCpfCnpj } from "@/lib/cpf-cnpj";
+import { getUser } from "@/lib/studio";
 import { SITE_URL } from "@/lib/env";
 import type { ActionState } from "@/lib/types";
 
@@ -34,10 +39,13 @@ export async function signIn(_: ActionState, formData: FormData): Promise<Action
 export async function signUp(_: ActionState, formData: FormData): Promise<ActionState> {
   const parsed = credentials.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const doc = normalizeCpfCnpj(String(formData.get("cpf_cnpj") ?? ""));
+  if (!doc) return { error: "Informe um CPF ou CNPJ válido." };
 
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
-    ...parsed.data,
+    email: parsed.data.email,
+    password: parsed.data.password,
     options: { emailRedirectTo: `${SITE_URL()}/auth/confirm?next=/painel/configurar` },
   });
   if (error) {
@@ -45,6 +53,7 @@ export async function signUp(_: ActionState, formData: FormData): Promise<Action
     if (error.code === "weak_password") return { error: "Escolha uma senha mais forte." };
     return { error: "Não foi possível criar a conta. Tente novamente." };
   }
+  if (data.user) await saveAccountDocument(data.user.id, doc);
   if (!data.session) {
     return { message: "Conta criada! Enviamos um link de confirmação para o seu e-mail." };
   }
@@ -68,6 +77,74 @@ export async function updatePassword(_: ActionState, formData: FormData): Promis
   const { error } = await supabase.auth.updateUser({ password: password.data });
   if (error) return { error: "Não foi possível alterar a senha. Peça um novo link." };
   return { message: "Senha alterada com sucesso." };
+}
+
+const MAX_RESET_FAILS_PER_EMAIL = 5;
+const MAX_RESET_FAILS_PER_IP = 20;
+
+/** Troca a senha conferindo e-mail + CPF/CNPJ da conta (sem e-mail de recuperação). */
+export async function resetPasswordWithDocument(_: ActionState, formData: FormData): Promise<ActionState> {
+  const parsed = credentials.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (formData.get("password") !== formData.get("password_confirm")) {
+    return { error: "As duas senhas não são iguais." };
+  }
+  const doc = normalizeCpfCnpj(String(formData.get("cpf_cnpj") ?? ""));
+  if (!doc) return { error: "Informe um CPF ou CNPJ válido." };
+  const { email, password } = parsed.data;
+
+  const h = await headers();
+  const ip = (h.get("x-forwarded-for") ?? "").split(",")[0].trim() || h.get("x-real-ip") || "?";
+  const admin = createAdminClient();
+  const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  const failures = (key: "email" | "ip", value: string) =>
+    admin
+      .from("audit_log")
+      .select("id", { count: "exact", head: true })
+      .eq("action", "auth.reset_failed")
+      .eq(`details->>${key}`, value)
+      .gte("created_at", since);
+  const [{ count: byEmail }, { count: byIp }] = await Promise.all([failures("email", email), failures("ip", ip)]);
+  if ((byEmail ?? 0) >= MAX_RESET_FAILS_PER_EMAIL || (byIp ?? 0) >= MAX_RESET_FAILS_PER_IP) {
+    return { error: "Muitas tentativas. Aguarde uma hora e tente de novo." };
+  }
+
+  const userId = await findAccountByDocument(email, doc);
+  if (!userId) {
+    await admin.from("audit_log").insert({ action: "auth.reset_failed", details: { email, ip } });
+    return { error: "E-mail ou CPF/CNPJ não conferem." };
+  }
+
+  const { error } = await admin.auth.admin.updateUserById(userId, { password });
+  if (error) {
+    if (error.code === "weak_password") return { error: "Escolha uma senha mais forte." };
+    return { error: "Não foi possível alterar a senha. Tente novamente." };
+  }
+  await admin.from("audit_log").insert({ actor_id: userId, action: "auth.password_reset", details: { ip } });
+
+  const supabase = await createClient();
+  const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+  if (signInError) return { message: "Senha alterada! Agora é só entrar com a nova senha." };
+  redirect("/painel");
+}
+
+/** Cadastra ou troca o CPF/CNPJ usado para recuperar a senha. Pede a senha atual. */
+export async function saveRecoveryDocument(_: ActionState, formData: FormData): Promise<ActionState> {
+  const user = await getUser();
+  if (!user?.email) redirect("/entrar");
+  const doc = normalizeCpfCnpj(String(formData.get("cpf_cnpj") ?? ""));
+  if (!doc) return { error: "Informe um CPF ou CNPJ válido." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithPassword({
+    email: user.email,
+    password: String(formData.get("current_password") ?? ""),
+  });
+  if (error) return { error: "Senha atual incorreta." };
+
+  if (!(await saveAccountDocument(user.id, doc))) return { error: "Não foi possível salvar. Tente novamente." };
+  await createAdminClient().from("audit_log").insert({ actor_id: user.id, action: "auth.recovery_doc_set" });
+  return { message: "CPF/CNPJ salvo. Você pode usá-lo para recuperar a senha." };
 }
 
 export async function signOut() {
