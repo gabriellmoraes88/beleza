@@ -12,10 +12,16 @@ export const SUPABASE_PUBLISHABLE_KEY = () =>
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   );
 
-// Em produção na Vercel, usa o domínio principal do projeto (ex.: bellink.com.br),
-// que a Vercel atualiza sozinha quando um domínio próprio é adicionado.
+// Endereço final do site em produção. bellink.com.br (sem www) redireciona para cá, e o
+// WhatsApp não segue esse redirecionamento ao montar a prévia do link.
+const PRODUCTION_URL = "https://www.bellink.com.br";
+
 export const SITE_URL = () => {
-  const host =
-    process.env.VERCEL_ENV === "production" ? process.env.VERCEL_PROJECT_PRODUCTION_URL : process.env.VERCEL_URL;
-  return (process.env.NEXT_PUBLIC_SITE_URL ?? (host ? `https://${host}` : "http://localhost:3000")).replace(/\/$/, "");
+  const fallback =
+    process.env.VERCEL_ENV === "production"
+      ? PRODUCTION_URL
+      : process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : "http://localhost:3000";
+  return (process.env.NEXT_PUBLIC_SITE_URL ?? fallback).replace(/\/$/, "");
 };
