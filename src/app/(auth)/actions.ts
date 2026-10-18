@@ -58,7 +58,34 @@ export async function requestPasswordReset(_: ActionState, formData: FormData): 
   await supabase.auth.resetPasswordForEmail(email.data, {
     redirectTo: `${SITE_URL()}/auth/confirm?next=/painel/nova-senha`,
   });
-  return { message: "Se o e-mail estiver cadastrado, você receberá um link para criar uma nova senha." };
+  return { ok: true, message: "Se o e-mail estiver cadastrado, você vai receber um código de 6 números." };
+}
+
+const resetWithCode = z.object({
+  email: z.string().trim().toLowerCase().email("Informe um e-mail válido."),
+  code: z.string().trim().regex(/^\d{6,10}$/, "Digite o código de 6 números que chegou no e-mail."),
+  password: z.string().min(8, "A senha precisa ter pelo menos 8 caracteres."),
+});
+
+/** Confirma o código enviado por e-mail e já salva a nova senha, sem precisar abrir link. */
+export async function resetPasswordWithCode(_: ActionState, formData: FormData): Promise<ActionState> {
+  const parsed = resetWithCode.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.verifyOtp({
+    email: parsed.data.email,
+    token: parsed.data.code,
+    type: "recovery",
+  });
+  if (error) return { error: "Código inválido ou vencido. Peça um novo código." };
+
+  const { error: updateError } = await supabase.auth.updateUser({ password: parsed.data.password });
+  if (updateError) {
+    if (updateError.code === "same_password") return { error: "Escolha uma senha diferente da anterior." };
+    return { error: "Não foi possível salvar a nova senha. Tente novamente." };
+  }
+  redirect("/painel");
 }
 
 export async function updatePassword(_: ActionState, formData: FormData): Promise<ActionState> {
