@@ -1,6 +1,6 @@
 "use server";
 
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
@@ -57,6 +57,8 @@ export async function signUp(_: ActionState, formData: FormData): Promise<Action
   if (!data.session) {
     return { message: "Conta criada! Enviamos um link de confirmação para o seu e-mail." };
   }
+  // Lido uma vez no painel para contar o cadastro no Pixel da Meta (src/app/meta-pixel.tsx).
+  (await cookies()).set("bl_signup", "1", { maxAge: 600, path: "/", sameSite: "lax" });
   redirect("/painel/configurar");
 }
 
