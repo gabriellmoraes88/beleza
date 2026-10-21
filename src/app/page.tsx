@@ -35,7 +35,7 @@ const categories = [
 const features = [
   {
     title: "Link exclusivo",
-    text: "Compartilhe no WhatsApp, Instagram e Google. Sua cliente agenda sozinha, sem criar conta.",
+    text: "Compartilhe no WhatsApp, Instagram e Google. Seu cliente agenda sozinho, sem criar conta.",
     icon: "M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7",
   },
   {
@@ -49,7 +49,7 @@ const features = [
     icon: "M8 3v3M16 3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z",
   },
   {
-    title: "Clientes salvas",
+    title: "Clientes salvos",
     text: "Histórico de atendimentos de cada cliente, identificado pelo telefone.",
     icon: "M16 19v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1M9.5 10a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM21 19v-1a4 4 0 0 0-3-3.9M15.5 3.1a3.5 3.5 0 0 1 0 6.8",
   },
@@ -63,8 +63,8 @@ const steps = [
 
 const faq = (trialDays: number) => [
   {
-    q: "Minha cliente precisa baixar aplicativo ou criar conta?",
-    a: "Não. Ela abre o seu link, escolhe o serviço, o dia e o horário e informa só nome e telefone.",
+    q: "Meu cliente precisa baixar aplicativo ou criar conta?",
+    a: "Não. Ele abre o seu link, escolhe o serviço, o dia e o horário e informa só nome e telefone.",
   },
   {
     q: "Preciso de cartão de crédito para testar?",
@@ -77,8 +77,8 @@ const faq = (trialDays: number) => [
     a: "Sim. Você define seus horários por dia da semana e bloqueia qualquer período na agenda.",
   },
   {
-    q: "A cliente paga pelo site?",
-    a: "Não. O pagamento do serviço continua sendo feito no studio, do jeito que você já faz hoje.",
+    q: "O cliente paga pelo site?",
+    a: "Não. O pagamento do serviço continua sendo feito no seu espaço, do jeito que você já faz hoje.",
   },
 ];
 
@@ -227,7 +227,7 @@ async function getPlan() {
   } catch {
     // Sem banco (ex.: build local sem variáveis): usa o padrão.
   }
-  return { price_cents: 3790, trial_days: 14 };
+  return { price_cents: 2790, trial_days: 14 };
 }
 
 export default async function Home() {
@@ -265,14 +265,14 @@ export default async function Home() {
           <div className="text-center lg:text-left">
             <span className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white px-3 py-1 text-xs font-medium text-stone-600">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              Agenda online para studios de beleza
+              Para salões, barbearias, estúdios e clínicas
             </span>
             <h1 className="mt-6 text-5xl font-bold leading-[1.02] tracking-tight text-stone-900 sm:text-6xl lg:text-7xl">
               Pare de agendar pelo <span className="text-[#25D366]">WhatsApp</span>.
             </h1>
             <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-stone-600 lg:mx-0">
-              Agenda online para manicures, nail designers, cabeleireiras e esteticistas. Sua cliente escolhe o serviço, o
-              dia e o horário pelo seu link.
+              Agenda online para salões, barbearias, estúdios de tatuagem, manicures e estética. Seu cliente escolhe o
+              serviço, o dia e o horário pelo seu link, 24 horas por dia, sem te chamar no WhatsApp.
             </p>
             <div className="mt-9 flex flex-col items-center gap-3 sm:flex-row sm:justify-center lg:justify-start">
               <Link href="/cadastro" className="btn-primary rounded-full px-7 py-3.5 text-base">
@@ -468,7 +468,7 @@ export default async function Home() {
               Sua agenda no link da bio.
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-lg text-stone-300">
-              Junte-se a mais de 300 profissionais pelo Brasil que já deixam as clientes agendarem sozinhas.
+              Junte-se a mais de 300 profissionais pelo Brasil que já deixam os clientes agendarem sozinhos.
             </p>
             <Link
               href="/cadastro"
